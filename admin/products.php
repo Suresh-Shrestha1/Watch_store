@@ -1,0 +1,1 @@
+<h1>It is admin list of products page.</h1>

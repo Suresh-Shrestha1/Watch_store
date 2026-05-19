@@ -1,0 +1,1 @@
+<h1>It is footer page.</h1>

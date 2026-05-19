@@ -1,0 +1,1 @@
+<h1>It is wishlist page.</h1>

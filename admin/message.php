@@ -1,0 +1,1 @@
+<h1>It is admin messages page.</h1>

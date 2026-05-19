@@ -1,0 +1,1 @@
+<h1>It is admin edit product page.</h1>

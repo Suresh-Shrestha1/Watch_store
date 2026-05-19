@@ -1,0 +1,1 @@
+<h1>It is admin list of customers page.</h1>

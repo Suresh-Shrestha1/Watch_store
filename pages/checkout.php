@@ -1,0 +1,1 @@
+<h1>It is checkout page.</h1>

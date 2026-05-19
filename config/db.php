@@ -1,0 +1,1 @@
+<h1>It is database configuration file</h1>

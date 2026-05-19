@@ -1,0 +1,1 @@
+<h1>It is cart page.</h1>

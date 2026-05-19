@@ -1,0 +1,1 @@
+<h1>It is shop page.</h1>
