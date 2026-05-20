@@ -13,3 +13,16 @@ function togglePassword() {
         eyeClosed.classList.add('hidden');
     }
 }
+
+var sidebar = document.getElementById('sidebar');
+var overlay = document.getElementById('sidebar-overlay');
+
+function openSidebar() {
+    sidebar.classList.remove('-translate-x-full');
+    overlay.classList.remove('hidden');
+}
+
+function closeSidebar() {
+    sidebar.classList.add('-translate-x-full');
+    overlay.classList.add('hidden');
+}
