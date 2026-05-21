@@ -1,3 +1,4 @@
+// Login
 function togglePassword() {
     var input = document.getElementById('password');
     var eyeOpen = document.getElementById('icon-eye-open');
@@ -14,6 +15,7 @@ function togglePassword() {
     }
 }
 
+// SideBar
 var sidebar = document.getElementById('sidebar');
 var overlay = document.getElementById('sidebar-overlay');
 
@@ -25,4 +27,38 @@ function openSidebar() {
 function closeSidebar() {
     sidebar.classList.add('-translate-x-full');
     overlay.classList.add('hidden');
+}
+
+// Brands
+function previewImage(input) {
+    var container = document.getElementById('preview-container');
+    var image = document.getElementById('preview-image');
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            image.src = e.target.result;
+            container.classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        container.classList.add('hidden');
+    }
+}
+
+// Add Brands
+// Show image preview when file is selected
+function previewImage(input) {
+    var container = document.getElementById('preview-container');
+    var image = document.getElementById('preview-image');
+
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            image.src = e.target.result;
+            container.classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        container.classList.add('hidden');
+    }
 }
