@@ -1,1 +1,0 @@
-<h1>It is reusable code page.</h1>

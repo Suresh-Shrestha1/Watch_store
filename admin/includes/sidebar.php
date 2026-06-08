@@ -50,10 +50,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
             Orders
         </a>
 
-        <a href="customer.php"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm font-medium no-underline transition-all duration-200 <?php echo ($current_page !== 'customer.php') ? 'hover:opacity-80' : ''; ?>"
-            style="<?php echo ($current_page === 'customer.php') ? 'background-color: rgba(201,168,76,0.15); color: #C9A84C;' : 'color: #B0B8C9;'; ?>">
-            Customer
+        <a href="customers.php"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm font-medium no-underline transition-all duration-200 <?php echo ($current_page !== 'customers.php') ? 'hover:opacity-80' : ''; ?>"
+            style="<?php echo ($current_page === 'customers.php') ? 'background-color: rgba(201,168,76,0.15); color: #C9A84C;' : 'color: #B0B8C9;'; ?>">
+            Customers
         </a>
 
         <a href="message.php"
