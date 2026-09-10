@@ -6,18 +6,18 @@ require_once '../../config/db.php';
 $user_id = $_SESSION['user_id'];
 $page_title = "My Wishlist – ChronoNest";
 
-$stmt = mysqli_prepare($conn, "SELECT w.id as wishlist_id, w.added_at, p.id as product_id, p.name, p.slug, p.price, p.stock_quantity, p.strap_adjustable, p.strap_size_options, p.movement_type, p.gender, b.name as brand_name,
+$stmt = $conn->prepare("SELECT w.id as wishlist_id, w.added_at, p.id as product_id, p.name, p.slug, p.price, p.stock_quantity, p.strap_adjustable, p.strap_size_options, p.movement_type, p.gender, b.name as brand_name,
     (SELECT image_url FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) as main_image
     FROM wishlists w JOIN products p ON w.product_id = p.id JOIN brands b ON p.brand_id = b.id
     WHERE w.user_id = ? AND p.is_active = 1 ORDER BY w.added_at DESC");
-mysqli_stmt_bind_param($stmt, "i", $user_id);
-mysqli_stmt_execute($stmt);
-$wishlist = mysqli_fetch_all(mysqli_stmt_get_result($stmt), MYSQLI_ASSOC);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$wishlist = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // Sidebar counts
-$order_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM orders WHERE user_id = $user_id"))['cnt'];
+$order_count = $conn->query("SELECT COUNT(*) as cnt FROM orders WHERE user_id = $user_id")->fetch_assoc()['cnt'];
 $wishlist_count = count($wishlist);
-$cart_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM cart WHERE user_id = $user_id"))['cnt'];
+$cart_count = $conn->query("SELECT COUNT(*) as cnt FROM cart WHERE user_id = $user_id")->fetch_assoc()['cnt'];
 
 $success = $_SESSION['success'] ?? '';
 $error = $_SESSION['error'] ?? '';
@@ -116,7 +116,7 @@ require_once '../../includes/header.php';
                         <a href="../product-detail.php?slug=<?= urlencode($item['slug']) ?>" class="block">
                             <div class="relative bg-[#F7F8FA] aspect-square overflow-hidden">
                                 <?php if ($item['main_image']): ?>
-                                <img src="../../assets/uploads/products/<?= htmlspecialchars($item['main_image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+                                <img src="../../assets/uploads/products/<?= htmlspecialchars(basename($item['main_image'])) ?>" alt="<?= htmlspecialchars($item['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                                 <?php else: ?>
                                 <div class="w-full h-full flex items-center justify-center"><svg class="w-16 h-16 text-[#E0E2E7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1"/><path stroke-linecap="round" stroke-width="1" d="M12 6v6l4 2"/></svg></div>
                                 <?php endif; ?>

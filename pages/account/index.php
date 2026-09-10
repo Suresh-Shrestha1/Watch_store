@@ -6,21 +6,21 @@ require_once '../../config/db.php';
 $user_id = $_SESSION['user_id'];
 
 // Fetch user
-$stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE id = ?");
-mysqli_stmt_bind_param($stmt, "i", $user_id);
-mysqli_stmt_execute($stmt);
-$user = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+$stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
 
 // Stats
-$order_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM orders WHERE user_id = $user_id"))['cnt'];
-$wishlist_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM wishlists WHERE user_id = $user_id"))['cnt'];
-$cart_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM cart WHERE user_id = $user_id"))['cnt'];
+$order_count = $conn->query("SELECT COUNT(*) as cnt FROM orders WHERE user_id = $user_id")->fetch_assoc()['cnt'];
+$wishlist_count = $conn->query("SELECT COUNT(*) as cnt FROM wishlists WHERE user_id = $user_id")->fetch_assoc()['cnt'];
+$cart_count = $conn->query("SELECT COUNT(*) as cnt FROM cart WHERE user_id = $user_id")->fetch_assoc()['cnt'];
 
 // Recent orders
-$recent_orders_stmt = mysqli_prepare($conn, "SELECT id, order_number, grand_total, order_status, payment_status, payment_method, ordered_at FROM orders WHERE user_id = ? ORDER BY ordered_at DESC LIMIT 3");
-mysqli_stmt_bind_param($recent_orders_stmt, "i", $user_id);
-mysqli_stmt_execute($recent_orders_stmt);
-$recent_orders = mysqli_fetch_all(mysqli_stmt_get_result($recent_orders_stmt), MYSQLI_ASSOC);
+$recent_orders_stmt = $conn->prepare("SELECT id, order_number, grand_total, order_status, payment_status, payment_method, ordered_at FROM orders WHERE user_id = ? ORDER BY ordered_at DESC LIMIT 3");
+$recent_orders_stmt->bind_param("i", $user_id);
+$recent_orders_stmt->execute();
+$recent_orders = $recent_orders_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 $page_title = "My Account – ChronoNest";
 $success = $_SESSION['success'] ?? '';

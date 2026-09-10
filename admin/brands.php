@@ -108,7 +108,7 @@ $conn->close();
                                         <td class="px-4 py-3">
                                             <div class="flex items-center gap-3">
                                                 <?php if (!empty($brand['logo'])): ?>
-                                                    <img src="../<?php echo htmlspecialchars($brand['logo']); ?>" alt="<?php echo htmlspecialchars($brand['name']); ?>" class="w-8 h-8 rounded object-contain" style="border: 1px solid #E0E2E7;">
+                                                    <img src="../assets/uploads/brands/<?php echo htmlspecialchars(basename($brand['logo'])); ?>" alt="<?php echo htmlspecialchars($brand['name']); ?>" class="w-8 h-8 rounded object-contain" style="border: 1px solid #E0E2E7;">
                                                 <?php else: ?>
                                                     <div class="w-8 h-8 rounded flex items-center justify-center text-xs font-bold" style="background-color: #F7F8FA; border: 1px solid #E0E2E7; color: #5A5F6D;">
                                                         <?php echo strtoupper(substr($brand['name'], 0, 1)); ?>

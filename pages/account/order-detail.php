@@ -8,20 +8,20 @@ $order_id = (int)($_GET['id'] ?? 0);
 
 if (!$order_id) { header('Location: orders.php'); exit; }
 
-$stmt = mysqli_prepare($conn, "SELECT * FROM orders WHERE id = ? AND user_id = ?");
-mysqli_stmt_bind_param($stmt, "ii", $order_id, $user_id);
-mysqli_stmt_execute($stmt);
-$order = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+$stmt = $conn->prepare("SELECT * FROM orders WHERE id = ? AND user_id = ?");
+$stmt->bind_param("ii", $order_id, $user_id);
+$stmt->execute();
+$order = $stmt->get_result()->fetch_assoc();
 
 if (!$order) { header('Location: orders.php'); exit; }
 
-$items_result = mysqli_query($conn, "SELECT oi.*, p.slug FROM order_items oi LEFT JOIN products p ON oi.product_id = p.id WHERE oi.order_id = $order_id");
-$items = mysqli_fetch_all($items_result, MYSQLI_ASSOC);
+$items_result = $conn->query("SELECT oi.*, p.slug FROM order_items oi LEFT JOIN products p ON oi.product_id = p.id WHERE oi.order_id = $order_id");
+$items = $items_result->fetch_all(MYSQLI_ASSOC);
 
 // Sidebar counts
-$order_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM orders WHERE user_id = $user_id"))['cnt'];
-$wishlist_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM wishlists WHERE user_id = $user_id"))['cnt'];
-$cart_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM cart WHERE user_id = $user_id"))['cnt'];
+$order_count = $conn->query("SELECT COUNT(*) as cnt FROM orders WHERE user_id = $user_id")->fetch_assoc()['cnt'];
+$wishlist_count = $conn->query("SELECT COUNT(*) as cnt FROM wishlists WHERE user_id = $user_id")->fetch_assoc()['cnt'];
+$cart_count = $conn->query("SELECT COUNT(*) as cnt FROM cart WHERE user_id = $user_id")->fetch_assoc()['cnt'];
 
 $page_title = "Order #" . $order['order_number'] . " – ChronoNest";
 $success = $_SESSION['success'] ?? '';
@@ -174,7 +174,7 @@ require_once '../../includes/header.php';
                                 <div class="flex gap-4 p-5">
                                     <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-[#F7F8FA] overflow-hidden flex-shrink-0 border border-[#E0E2E7]">
                                         <?php if ($item['product_image']): ?>
-                                        <img src="../../assets/uploads/products/<?= htmlspecialchars($item['product_image']) ?>" alt="" class="w-full h-full object-cover">
+                                        <img src="../../assets/uploads/products/<?= htmlspecialchars(basename($item['product_image'])) ?>" alt="" class="w-full h-full object-cover">
                                         <?php else: ?>
                                         <div class="w-full h-full flex items-center justify-center"><svg class="w-8 h-8 text-[#E0E2E7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1"/></svg></div>
                                         <?php endif; ?>

@@ -77,29 +77,29 @@ $order_sql = match($sort) {
 
 // Count total
 $count_sql = "SELECT COUNT(*) as total FROM products p JOIN brands b ON p.brand_id = b.id WHERE $where_sql";
-$count_stmt = mysqli_prepare($conn, $count_sql);
-if ($types) mysqli_stmt_bind_param($count_stmt, $types, ...$params);
-mysqli_stmt_execute($count_stmt);
-$total_products = mysqli_fetch_assoc(mysqli_stmt_get_result($count_stmt))['total'];
+$count_stmt = $conn->prepare($count_sql);
+if ($types) $count_stmt->bind_param($types, ...$params);
+$count_stmt->execute();
+$total_products = $count_stmt->get_result()->fetch_assoc()['total'];
 $total_pages = ceil($total_products / $per_page);
 
 // Fetch products
-$products_sql = "SELECT p.id, p.name, p.slug, p.price, p.gender, p.movement_type, p.stock_quantity, p.case_diameter_mm, p.water_resistance, b.name as brand_name, b.slug as brand_slug,
+$products_sql = "SELECT p.id, p.name, p.slug, p.price, p.gender, p.movement_type, p.stock_quantity, p.case_diameter_mm, p.water_resistance, p.description, p.strap_adjustable, p.strap_size_options, b.name as brand_name, b.slug as brand_slug,
     (SELECT image_url FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) as main_image
     FROM products p JOIN brands b ON p.brand_id = b.id
     WHERE $where_sql ORDER BY $order_sql LIMIT ? OFFSET ?";
-$products_stmt = mysqli_prepare($conn, $products_sql);
+$products_stmt = $conn->prepare($products_sql);
 $p_types = $types . "ii";
 $p_params = array_merge($params, [$per_page, $offset]);
-mysqli_stmt_bind_param($products_stmt, $p_types, ...$p_params);
-mysqli_stmt_execute($products_stmt);
-$products = mysqli_fetch_all(mysqli_stmt_get_result($products_stmt), MYSQLI_ASSOC);
+$products_stmt->bind_param($p_types, ...$p_params);
+$products_stmt->execute();
+$products = $products_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // Fetch filter options
-$brands_list = mysqli_fetch_all(mysqli_query($conn, "SELECT name, slug FROM brands WHERE is_active = 1 ORDER BY name ASC"), MYSQLI_ASSOC);
-$strap_materials = mysqli_fetch_all(mysqli_query($conn, "SELECT DISTINCT strap_material FROM products WHERE is_active = 1 AND strap_material IS NOT NULL AND strap_material != '' ORDER BY strap_material ASC"), MYSQLI_ASSOC);
-$dial_colors = mysqli_fetch_all(mysqli_query($conn, "SELECT DISTINCT dial_color FROM products WHERE is_active = 1 AND dial_color IS NOT NULL AND dial_color != '' ORDER BY dial_color ASC"), MYSQLI_ASSOC);
-$water_options = mysqli_fetch_all(mysqli_query($conn, "SELECT DISTINCT water_resistance FROM products WHERE is_active = 1 AND water_resistance IS NOT NULL AND water_resistance != '' ORDER BY water_resistance ASC"), MYSQLI_ASSOC);
+$brands_list = $conn->query("SELECT name, slug FROM brands WHERE is_active = 1 ORDER BY name ASC")->fetch_all(MYSQLI_ASSOC);
+$strap_materials = $conn->query("SELECT DISTINCT strap_material FROM products WHERE is_active = 1 AND strap_material IS NOT NULL AND strap_material != '' ORDER BY strap_material ASC")->fetch_all(MYSQLI_ASSOC);
+$dial_colors = $conn->query("SELECT DISTINCT dial_color FROM products WHERE is_active = 1 AND dial_color IS NOT NULL AND dial_color != '' ORDER BY dial_color ASC")->fetch_all(MYSQLI_ASSOC);
+$water_options = $conn->query("SELECT DISTINCT water_resistance FROM products WHERE is_active = 1 AND water_resistance IS NOT NULL AND water_resistance != '' ORDER BY water_resistance ASC")->fetch_all(MYSQLI_ASSOC);
 
 // Build current query string for pagination
 function buildQuery($overrides = []) {
@@ -116,6 +116,18 @@ $brand_name_display = '';
 if ($brand_filter) {
     foreach ($brands_list as $bl) {
         if ($bl['slug'] === $brand_filter) { $brand_name_display = $bl['name']; break; }
+    }
+}
+
+// Load wishlist product IDs for the logged in user (needed for rendering heart state)
+$wishlist_product_ids = [];
+if (isset($_SESSION['user_id'])) {
+    $uid = (int)$_SESSION['user_id'];
+    $wl_res = $conn->query("SELECT product_id FROM wishlists WHERE user_id = $uid");
+    if ($wl_res) {
+        while ($r = $wl_res->fetch_assoc()) {
+            $wishlist_product_ids[] = (int)$r['product_id'];
+        }
     }
 }
 
@@ -298,39 +310,80 @@ require_once '../includes/header.php';
                 <?php if (!empty($products)): ?>
                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                     <?php foreach ($products as $product): ?>
-                    <a href="product-detail.php?slug=<?= urlencode($product['slug']) ?>" class="group bg-white border border-[#E0E2E7] rounded-xl overflow-hidden hover:shadow-[0_8px_28px_rgba(0,0,0,0.14)] hover:-translate-y-1 transition-all duration-200 block">
-                        <div class="relative bg-[#F7F8FA] aspect-square overflow-hidden">
-                            <?php if ($product['main_image']): ?>
-                            <img src="../assets/uploads/products/<?= htmlspecialchars($product['main_image']) ?>" alt="<?= htmlspecialchars($product['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
-                            <?php else: ?>
-                            <div class="w-full h-full flex items-center justify-center"><svg class="w-16 h-16 text-[#E0E2E7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1"/><path stroke-linecap="round" stroke-width="1" d="M12 6v6l4 2"/></svg></div>
-                            <?php endif; ?>
-                            <div class="absolute top-3 left-3">
-                                <?php if ($product['stock_quantity'] == 0): ?>
-                                <span class="inline-block px-2.5 py-1 rounded bg-[#FDEAEA] text-[#D64545] font-['Inter'] font-semibold text-[11px]">Out of Stock</span>
-                                <?php elseif ($product['stock_quantity'] <= 5): ?>
-                                <span class="inline-block px-2.5 py-1 rounded bg-[#FFF3E0] text-[#E65100] font-['Inter'] font-semibold text-[11px]">Low Stock</span>
-                                <?php else: ?>
-                                <span class="inline-block px-2.5 py-1 rounded bg-[#E8F5E9] text-[#2E7D32] font-['Inter'] font-semibold text-[11px]">In Stock</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <div class="p-4">
-                            <div class="font-['Inter'] text-[12px] text-[#C9A84C] font-semibold mb-1"><?= htmlspecialchars($product['brand_name']) ?></div>
-                            <h3 class="font-['Inter'] font-semibold text-[15px] text-[#1A1A2E] leading-[1.4] mb-2 line-clamp-2 group-hover:text-[#1B2A4A]"><?= htmlspecialchars($product['name']) ?></h3>
-                            <div class="flex items-center gap-2 mb-3 flex-wrap">
-                                <span class="font-['Inter'] text-[11px] text-[#5A5F6D] bg-[#F7F8FA] px-2 py-0.5 rounded"><?= htmlspecialchars($product['gender']) ?></span>
-                                <span class="font-['Inter'] text-[11px] text-[#5A5F6D] bg-[#F7F8FA] px-2 py-0.5 rounded"><?= htmlspecialchars($product['movement_type']) ?></span>
-                                <?php if ($product['water_resistance']): ?>
-                                <span class="font-['Inter'] text-[11px] text-[#5A5F6D] bg-[#F7F8FA] px-2 py-0.5 rounded"><?= htmlspecialchars($product['water_resistance']) ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="font-['Inter'] font-bold text-[20px] text-[#1A1A2E]">NPR <?= number_format($product['price'], 0) ?></span>
-                                <span class="w-8 h-8 flex items-center justify-center rounded-lg bg-[#1B2A4A] group-hover:bg-[#C9A84C] transition-colors duration-200"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></span>
-                            </div>
-                        </div>
+            <div class="rounded-xl bg-white shadow-lg overflow-hidden group hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-300 border border-[#E0E2E7]">
+                <!-- Image Section -->
+                <div class="relative flex aspect-square items-center justify-center overflow-hidden bg-[#F7F8FA]">
+                    <?php if ($product['main_image']): ?>
+                    <a href="product-detail.php?slug=<?= urlencode($product['slug']) ?>" class="block w-full h-full flex items-center justify-center">
+                        <img src="../assets/uploads/products/<?= htmlspecialchars(basename($product['main_image'])) ?>" alt="<?= htmlspecialchars($product['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                     </a>
+                    <?php else: ?>
+                    <a href="product-detail.php?slug=<?= urlencode($product['slug']) ?>" class="block">
+                        <svg class="w-16 h-16 text-[#E0E2E7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1" /><path stroke-linecap="round" stroke-width="1" d="M12 6v6l4 2" /></svg>
+                    </a>
+                    <?php endif; ?>
+
+                    <!-- Wishlist Button -->
+                    <?php $is_in_wishlist = in_array((int)$product['id'], $wishlist_product_ids, true); ?>
+                    <button type="button" onclick="toggleWishlist(this, <?= $product['id'] ?>)" class="wishlist-btn absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white hover:bg-red-50 shadow-md rounded-full transition-all duration-200 z-10" aria-label="Add to wishlist" data-liked="<?= $is_in_wishlist ? '1' : '0' ?>">
+                        <svg class="heart-icon w-4 h-4 transition-all duration-200 <?= $is_in_wishlist ? 'fill-red-500 stroke-red-500' : 'stroke-[#5A5F6D] fill-none' ?>" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                    </button>
+
+                    <!-- Stock Badge -->
+                    <div class="absolute top-4 left-4 z-10">
+                        <?php if ($product['stock_quantity'] == 0): ?>
+                        <span class="inline-block px-2.5 py-1 rounded bg-[#FDEAEA] text-[#D64545] font-['Inter'] font-semibold text-[11px]">Out of Stock</span>
+                        <?php elseif ($product['stock_quantity'] <= 5): ?>
+                        <span class="inline-block px-2.5 py-1 rounded bg-[#FFF3E0] text-[#E65100] font-['Inter'] font-semibold text-[11px]">Low Stock</span>
+                        <?php else: ?>
+                        <span class="inline-block px-2.5 py-1 rounded bg-[#E8F5E9] text-[#2E7D32] font-['Inter'] font-semibold text-[11px]">In Stock</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Card Content -->
+                <div class="bg-white">
+                    <div class="flex flex-col space-y-1.5 p-5 pb-3">
+                        <a href="product-detail.php?slug=<?= urlencode($product['slug']) ?>" class="block">
+                            <h3 class="font-['Playfair_Display'] font-semibold text-[18px] text-[#1A1A2E] leading-tight tracking-tight line-clamp-1 hover:text-[#C9A84C] transition-colors duration-200">
+                                <?= htmlspecialchars($product['name']) ?>
+                            </h3>
+                        </a>
+                        <div class="flex items-center gap-2 flex-wrap pt-1">
+                            <span class="inline-flex items-center rounded-full border border-[#E0E2E7] px-2.5 py-0.5 text-[11px] font-semibold text-[#5A5F6D] font-['Inter']"><?= htmlspecialchars($product['brand_name']) ?></span>
+                            <span class="inline-flex items-center rounded-full border border-[#E0E2E7] px-2.5 py-0.5 text-[11px] font-semibold text-[#5A5F6D] font-['Inter']"><?= htmlspecialchars($product['gender']) ?></span>
+                            <span class="inline-flex items-center rounded-full border border-[#E0E2E7] px-2.5 py-0.5 text-[11px] font-semibold text-[#5A5F6D] font-['Inter']"><?= htmlspecialchars($product['movement_type']) ?></span>
+                        </div>
+                    </div>
+
+                    <!-- Description from DB -->
+                    <div class="px-5 pb-3">
+                        <p class="font-['Inter'] text-[13px] text-[#5A5F6D] leading-relaxed line-clamp-2">
+                            <?= htmlspecialchars($product['description'] ?? 'No description available.') ?>
+                        </p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="flex items-center justify-between gap-3 p-5 pt-2 max-sm:flex-col max-sm:items-stretch">
+                        <div class="flex flex-col">
+                            <span class="text-[11px] font-medium uppercase text-[#5A5F6D] font-['Inter'] tracking-wider">Price</span>
+                            <span class="text-[18px] font-bold text-[#1A1A2E] font-['Inter']">NPR <?= number_format($product['price'], 0) ?></span>
+                        </div>
+                        <?php if ($product['stock_quantity'] > 0): ?>
+                        <button type="button" onclick="addToCart(this, <?= $product['id'] ?>)" data-strap-adjustable="<?= $product['strap_adjustable'] ? '1' : '0' ?>" data-strap-sizes="<?= htmlspecialchars($product['strap_size_options'] ?? '') ?>" class="add-to-cart-btn inline-flex items-center justify-center gap-2 h-10 px-5 bg-[#1A1A2E] hover:bg-[#C9A84C] text-white font-['Inter'] font-semibold text-[13px] rounded-md transition-all duration-200 shadow-md hover:shadow-lg whitespace-nowrap">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Add to cart
+                        </button>
+                        <?php else: ?>
+                        <button type="button" disabled class="inline-flex items-center justify-center gap-2 h-10 px-5 bg-[#E0E2E7] text-[#5A5F6D] font-['Inter'] font-semibold text-[13px] rounded-md cursor-not-allowed whitespace-nowrap">Sold Out</button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
                     <?php endforeach; ?>
                 </div>
 
@@ -372,5 +425,8 @@ require_once '../includes/header.php';
         </div>
     </div>
 </section>
+
+<!-- Toast Notification Container -->
+<div id="toastContainer" class="fixed top-24 right-6 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
 <?php require_once '../includes/footer.php'; ?>

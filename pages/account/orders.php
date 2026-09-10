@@ -18,23 +18,23 @@ if ($status_filter && in_array($status_filter, ['pending','confirmed','processin
     $types .= "s";
 }
 
-$stmt = mysqli_prepare($conn, "SELECT * FROM orders WHERE $where ORDER BY ordered_at DESC");
-mysqli_stmt_bind_param($stmt, $types, ...$params);
-mysqli_stmt_execute($stmt);
-$orders = mysqli_fetch_all(mysqli_stmt_get_result($stmt), MYSQLI_ASSOC);
+$stmt = $conn->prepare("SELECT * FROM orders WHERE $where ORDER BY ordered_at DESC");
+$stmt->bind_param($types, ...$params);
+$stmt->execute();
+$orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // Counts
-$all_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM orders WHERE user_id = $user_id"))['cnt'];
+$all_count = $conn->query("SELECT COUNT(*) as cnt FROM orders WHERE user_id = $user_id")->fetch_assoc()['cnt'];
 $status_counts = [];
 foreach (['pending','confirmed','processing','shipped','delivered'] as $s) {
-    $sc = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM orders WHERE user_id = $user_id AND order_status = '$s'"));
+    $sc = $conn->query("SELECT COUNT(*) as cnt FROM orders WHERE user_id = $user_id AND order_status = '$s'")->fetch_assoc();
     $status_counts[$s] = $sc['cnt'];
 }
 
 // Sidebar counts
 $order_count = $all_count;
-$wishlist_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM wishlists WHERE user_id = $user_id"))['cnt'];
-$cart_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt FROM cart WHERE user_id = $user_id"))['cnt'];
+$wishlist_count = $conn->query("SELECT COUNT(*) as cnt FROM wishlists WHERE user_id = $user_id")->fetch_assoc()['cnt'];
+$cart_count = $conn->query("SELECT COUNT(*) as cnt FROM cart WHERE user_id = $user_id")->fetch_assoc()['cnt'];
 
 require_once '../../includes/header.php';
 ?>
@@ -140,7 +140,7 @@ require_once '../../includes/header.php';
                             'failed' => 'bg-[#FDEAEA] text-[#D64545]',
                             default => 'bg-[#FFF3E0] text-[#E65100]'
                         };
-                        $ic = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as cnt, SUM(quantity) as qty FROM order_items WHERE order_id = {$order['id']}"));
+                        $ic = $conn->query("SELECT COUNT(*) as cnt, SUM(quantity) as qty FROM order_items WHERE order_id = {$order['id']}")->fetch_assoc();
                     ?>
                     <a href="order-detail.php?id=<?= $order['id'] ?>" class="block bg-white rounded-xl border border-[#E0E2E7] shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.14)] hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-4">

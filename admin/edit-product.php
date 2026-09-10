@@ -269,7 +269,7 @@ unset($_SESSION['product_success'], $_SESSION['product_error']);
                                 <div class="grid grid-cols-2 gap-3">
                                     <?php foreach ($images as $img): ?>
                                         <div class="relative rounded overflow-hidden" style="border: 1px solid #E0E2E7;">
-                                            <img src="../<?php echo htmlspecialchars($img['image_url']); ?>" alt="" class="w-full h-24 object-cover">
+                                            <img src="../assets/uploads/products/<?php echo htmlspecialchars(basename($img['image_url'])); ?>" alt="" class="w-full h-24 object-cover">
 
                                             <!-- Main badge -->
                                             <?php if ($img['is_main']): ?>
@@ -280,22 +280,16 @@ unset($_SESSION['product_success'], $_SESSION['product_error']);
                                             <div class="flex" style="border-top: 1px solid #E0E2E7;">
 
                                                 <!-- Set as Main -->
-                                                <?php if (!$img['is_main']): ?>
-                                                    <form method="POST" action="actions/product-action.php" class="flex-1">
-                                                        <input type="hidden" name="action" value="set_main_image">
-                                                        <input type="hidden" name="image_id" value="<?php echo $img['id']; ?>">
-                                                        <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                                                        <button type="submit" class="w-full py-1.5 text-xs font-medium transition-all duration-200" style="background: none; border: none; cursor: pointer; color: #1B2A4A;" onmouseover="this.style.backgroundColor='#F7F8FA';" onmouseout="this.style.backgroundColor='transparent';">Set Main</button>
-                                                    </form>
-                                                <?php endif; ?>
+                                                    <?php if (!$img['is_main']): ?>
+                                                        <div class="flex-1">
+                                                            <button type="button" onclick="submitImageAction('set_main_image', <?php echo $img['id']; ?>, <?php echo $product['id']; ?>)" class="w-full py-1.5 text-xs font-medium transition-all duration-200" style="background: none; border: none; cursor: pointer; color: #1B2A4A;" onmouseover="this.style.backgroundColor='#F7F8FA';" onmouseout="this.style.backgroundColor='transparent';">Set Main</button>
+                                                        </div>
+                                                    <?php endif; ?>
 
-                                                <!-- Delete Image -->
-                                                <form method="POST" action="actions/product-action.php" class="<?php echo $img['is_main'] ? 'flex-1' : ''; ?>" style="<?php echo !$img['is_main'] ? 'border-left: 1px solid #E0E2E7;' : ''; ?>" onsubmit="return confirm('Delete this image?');">
-                                                    <input type="hidden" name="action" value="delete_image">
-                                                    <input type="hidden" name="image_id" value="<?php echo $img['id']; ?>">
-                                                    <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                                                    <button type="submit" class="w-full py-1.5 text-xs font-medium transition-all duration-200" style="background: none; border: none; cursor: pointer; color: #D64545;" onmouseover="this.style.backgroundColor='#FDEAEA';" onmouseout="this.style.backgroundColor='transparent';">Delete</button>
-                                                </form>
+                                                    <!-- Delete Image -->
+                                                    <div class="<?php echo $img['is_main'] ? 'flex-1' : ''; ?>" style="<?php echo !$img['is_main'] ? 'border-left: 1px solid #E0E2E7;' : ''; ?>">
+                                                        <button type="button" onclick="if(confirm('Delete this image?')) submitImageAction('delete_image', <?php echo $img['id']; ?>, <?php echo $product['id']; ?>)" class="w-full py-1.5 text-xs font-medium transition-all duration-200" style="background: none; border: none; cursor: pointer; color: #D64545;" onmouseover="this.style.backgroundColor='#FDEAEA';" onmouseout="this.style.backgroundColor='transparent';">Delete</button>
+                                                    </div>
 
                                             </div>
                                         </div>
@@ -327,6 +321,20 @@ unset($_SESSION['product_success'], $_SESSION['product_error']);
         </div>
     </main>
 
+    <script>
+        function submitImageAction(action, imageId, productId) {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'actions/product-action.php';
+
+            var a = document.createElement('input'); a.type = 'hidden'; a.name = 'action'; a.value = action; form.appendChild(a);
+            var i = document.createElement('input'); i.type = 'hidden'; i.name = 'image_id'; i.value = imageId; form.appendChild(i);
+            var p = document.createElement('input'); p.type = 'hidden'; p.name = 'product_id'; p.value = productId; form.appendChild(p);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
     <script src = "../assets/js/admin.js"></script>
 
 </body>

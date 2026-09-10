@@ -22,18 +22,18 @@ if ($action === 'update_profile') {
     }
 
     // Check phone uniqueness
-    $check = mysqli_prepare($conn, "SELECT id FROM users WHERE phone = ? AND id != ?");
-    mysqli_stmt_bind_param($check, "si", $phone, $user_id);
-    mysqli_stmt_execute($check);
-    if (mysqli_stmt_get_result($check)->num_rows > 0) {
+    $check = $conn->prepare("SELECT id FROM users WHERE phone = ? AND id != ?");
+    $check->bind_param("si", $phone, $user_id);
+    $check->execute();
+    if ($check->get_result()->num_rows > 0) {
         $_SESSION['error'] = 'Phone number is already in use by another account.';
         header('Location: ../account/index.php'); exit;
     }
 
-    $stmt = mysqli_prepare($conn, "UPDATE users SET name = ?, phone = ?, address = ? WHERE id = ?");
-    mysqli_stmt_bind_param($stmt, "sssi", $name, $phone, $address, $user_id);
+    $stmt = $conn->prepare("UPDATE users SET name = ?, phone = ?, address = ? WHERE id = ?");
+    $stmt->bind_param("sssi", $name, $phone, $address, $user_id);
 
-    if (mysqli_stmt_execute($stmt)) {
+    if ($stmt->execute()) {
         $_SESSION['user_name'] = $name;
         $_SESSION['success'] = 'Profile updated successfully!';
     } else {
@@ -61,10 +61,10 @@ if ($action === 'change_password') {
         header('Location: ../account/index.php'); exit;
     }
 
-    $stmt = mysqli_prepare($conn, "SELECT password FROM users WHERE id = ?");
-    mysqli_stmt_bind_param($stmt, "i", $user_id);
-    mysqli_stmt_execute($stmt);
-    $user = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    $stmt = $conn->prepare("SELECT password FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
 
     if (!password_verify($current, $user['password'])) {
         $_SESSION['error'] = 'Current password is incorrect.';
@@ -72,10 +72,10 @@ if ($action === 'change_password') {
     }
 
     $hashed = password_hash($new_pass, PASSWORD_DEFAULT);
-    $upd = mysqli_prepare($conn, "UPDATE users SET password = ? WHERE id = ?");
-    mysqli_stmt_bind_param($upd, "si", $hashed, $user_id);
+    $upd = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+    $upd->bind_param("si", $hashed, $user_id);
 
-    if (mysqli_stmt_execute($upd)) {
+    if ($upd->execute()) {
         $_SESSION['success'] = 'Password changed successfully!';
     } else {
         $_SESSION['error'] = 'Failed to change password.';

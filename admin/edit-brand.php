@@ -93,7 +93,7 @@ unset($_SESSION['brand_error']);
                         <!-- Current Logo -->
                         <?php if (!empty($brand['logo'])): ?>
                             <div class="mb-3 flex items-center gap-3">
-                                <img src="../<?php echo htmlspecialchars($brand['logo']); ?>" alt="Current logo" class="w-12 h-12 rounded object-contain" style="border: 1px solid #E0E2E7;">
+                                <img src="../assets/uploads/brands/<?php echo htmlspecialchars(basename($brand['logo'])); ?>" alt="Current logo" class="w-12 h-12 rounded object-contain" style="border: 1px solid #E0E2E7;">
                                 <span class="text-xs" style="color: #5A5F6D;">Current logo</span>
                             </div>
                         <?php endif; ?>

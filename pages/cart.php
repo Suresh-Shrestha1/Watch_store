@@ -10,10 +10,10 @@ $cart_sql = "SELECT c.*, p.name, p.slug, p.price, p.stock_quantity, p.strap_adju
     (SELECT image_url FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) as main_image
     FROM cart c JOIN products p ON c.product_id = p.id JOIN brands b ON p.brand_id = b.id
     WHERE c.user_id = ? AND p.is_active = 1 ORDER BY c.added_at DESC";
-$stmt = mysqli_prepare($conn, $cart_sql);
-mysqli_stmt_bind_param($stmt, "i", $user_id);
-mysqli_stmt_execute($stmt);
-$cart_items = mysqli_fetch_all(mysqli_stmt_get_result($stmt), MYSQLI_ASSOC);
+$stmt = $conn->prepare($cart_sql);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$cart_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 $subtotal = 0;
 foreach ($cart_items as $item) { $subtotal += $item['price'] * $item['quantity']; }
@@ -73,7 +73,7 @@ require_once '../includes/header.php';
                     <div class="flex gap-4">
                         <a href="product-detail.php?slug=<?= urlencode($item['slug']) ?>" class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-[#F7F8FA] overflow-hidden flex-shrink-0 border border-[#E0E2E7]">
                             <?php if ($item['main_image']): ?>
-                            <img src="../assets/uploads/products/<?= htmlspecialchars($item['main_image']) ?>" alt="" class="w-full h-full object-cover">
+                            <img src="../assets/uploads/products/<?= htmlspecialchars(basename($item['main_image'])) ?>" alt="" class="w-full h-full object-cover">
                             <?php else: ?>
                             <div class="w-full h-full flex items-center justify-center"><svg class="w-8 h-8 text-[#E0E2E7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1"/></svg></div>
                             <?php endif; ?>
@@ -84,8 +84,7 @@ require_once '../includes/header.php';
                                     <div class="font-['Inter'] text-[11px] text-[#C9A84C] font-semibold"><?= htmlspecialchars($item['brand_name']) ?></div>
                                     <a href="product-detail.php?slug=<?= urlencode($item['slug']) ?>" class="font-['Inter'] font-semibold text-[15px] text-[#1A1A2E] hover:text-[#C9A84C] transition-colors line-clamp-2 block"><?= htmlspecialchars($item['name']) ?></a>
 
-                                    <!-- UPDATED STRAP DISPLAY IN CART -->
-                                                                        <!-- STRAP DISPLAY IN CART (with length mapping) -->
+                                    <!-- STRAP DISPLAY IN CART (with length mapping) -->
                                     <?php
                                     $cart_strap_length_map = ['XS' => 145, 'S' => 160, 'M' => 175, 'L' => 190, 'XL' => 205];
                                     ?>

@@ -390,7 +390,7 @@ $pay_colors = [
                                         <td class="px-4 py-2.5">
                                             <div class="flex items-center gap-3">
                                                 <?php if (!empty($product['main_image'])): ?>
-                                                    <img src="../<?php echo htmlspecialchars($product['main_image']); ?>" alt="" class="w-8 h-8 rounded object-cover flex-shrink-0" style="border: 1px solid #E0E2E7;">
+                                                    <img src="../assets/uploads/products/<?php echo htmlspecialchars(basename($product['main_image'])); ?>" alt="" class="w-8 h-8 rounded object-cover flex-shrink-0" style="border: 1px solid #E0E2E7;">
                                                 <?php else: ?>
                                                     <div class="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 text-xs" style="background-color: #F7F8FA; border: 1px solid #E0E2E7; color: #8A8F99;">—</div>
                                                 <?php endif; ?>

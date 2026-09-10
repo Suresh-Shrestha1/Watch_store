@@ -49,15 +49,25 @@ require_once '../includes/header.php';
                 </div>
             </div>
             <div class="relative">
-                <div class="bg-[#1B2A4A] rounded-2xl p-10 text-center relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-40 h-40 bg-[#C9A84C]/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                    <div class="absolute bottom-0 left-0 w-32 h-32 bg-[#C9A84C]/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-                    <div class="relative z-10">
-                        <div class="w-24 h-24 rounded-full bg-[#C9A84C]/20 border-2 border-[#C9A84C]/40 flex items-center justify-center mx-auto mb-6">
-                            <svg class="w-12 h-12 text-[#C9A84C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><path stroke-linecap="round" stroke-width="1.5" d="M12 6v6l4 2"/></svg>
+                <div class="rounded-[28px] border border-[#E0E2E7] bg-white p-2 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+                    <div class="relative overflow-hidden rounded-[24px]">
+                        <img src="../assets/images/About_watch.png"
+                            alt="Premium ChronoNest watches"
+                            class="h-[420px] w-full object-cover"
+                            loading="lazy"
+                            decoding="async">
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#07111f] via-[#07111f]/35 to-transparent"></div>
+                        <div class="absolute inset-x-0 bottom-0 p-6 md:p-8">
+                            <span class="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F6E7B6] backdrop-blur-sm">
+                                ChronoNest Signature
+                            </span>
+                            <h3 class="mt-3 font-['Playfair_Display'] text-[24px] md:text-[28px] font-semibold text-white leading-tight">
+                                Wear timeless craftsmanship
+                            </h3>
+                            <p class="mt-2 max-w-md font-['Inter'] text-[14px] leading-6 text-white/80">
+                                Discover watches shaped by precision, elegance, and a presence that feels effortlessly elevated.
+                            </p>
                         </div>
-                        <blockquote class="font-['Playfair_Display'] font-semibold text-[22px] text-white leading-[1.4] mb-4">"Time is the most precious luxury — wear it well."</blockquote>
-                        <cite class="font-['Inter'] text-[14px] text-[#C9A84C] not-italic">— ChronoNest Philosophy</cite>
                     </div>
                 </div>
             </div>

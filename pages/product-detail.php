@@ -5,22 +5,22 @@ require_once '../config/db.php';
 $slug = isset($_GET['slug']) ? trim($_GET['slug']) : '';
 if (!$slug) { header('Location: shop.php'); exit; }
 
-$stmt = mysqli_prepare($conn, "SELECT p.*, b.name as brand_name, b.slug as brand_slug FROM products p JOIN brands b ON p.brand_id = b.id WHERE p.slug = ? AND p.is_active = 1 LIMIT 1");
-mysqli_stmt_bind_param($stmt, "s", $slug);
-mysqli_stmt_execute($stmt);
-$product = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+$stmt = $conn->prepare("SELECT p.*, b.name as brand_name, b.slug as brand_slug FROM products p JOIN brands b ON p.brand_id = b.id WHERE p.slug = ? AND p.is_active = 1 LIMIT 1");
+$stmt->bind_param("s", $slug);
+$stmt->execute();
+$product = $stmt->get_result()->fetch_assoc();
 
 if (!$product) { header('Location: shop.php'); exit; }
 
-$img_result = mysqli_query($conn, "SELECT * FROM product_images WHERE product_id = {$product['id']} ORDER BY is_main DESC, sort_order ASC");
-$images = mysqli_fetch_all($img_result, MYSQLI_ASSOC);
+$img_result = $conn->query("SELECT * FROM product_images WHERE product_id = {$product['id']} ORDER BY is_main DESC, sort_order ASC");
+$images = $img_result->fetch_all(MYSQLI_ASSOC);
 
 $in_wishlist = false;
 if (isset($_SESSION['user_id'])) {
-    $wl_stmt = mysqli_prepare($conn, "SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?");
-    mysqli_stmt_bind_param($wl_stmt, "ii", $_SESSION['user_id'], $product['id']);
-    mysqli_stmt_execute($wl_stmt);
-    $in_wishlist = mysqli_stmt_get_result($wl_stmt)->num_rows > 0;
+    $wl_stmt = $conn->prepare("SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?");
+    $wl_stmt->bind_param("ii", $_SESSION['user_id'], $product['id']);
+    $wl_stmt->execute();
+    $in_wishlist = $wl_stmt->get_result()->num_rows > 0;
 }
 
 // Strap size → length mapping
@@ -49,10 +49,10 @@ $related_sql = "SELECT p.id, p.name, p.slug, p.price, p.stock_quantity, b.name a
     (SELECT image_url FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) as main_image
     FROM products p JOIN brands b ON p.brand_id = b.id
     WHERE p.is_active = 1 AND p.id != ? AND (p.brand_id = ? OR p.gender = ?) ORDER BY RAND() LIMIT 4";
-$rel_stmt = mysqli_prepare($conn, $related_sql);
-mysqli_stmt_bind_param($rel_stmt, "iis", $product['id'], $product['brand_id'], $product['gender']);
-mysqli_stmt_execute($rel_stmt);
-$related = mysqli_fetch_all(mysqli_stmt_get_result($rel_stmt), MYSQLI_ASSOC);
+$rel_stmt = $conn->prepare($related_sql);
+$rel_stmt->bind_param("iis", $product['id'], $product['brand_id'], $product['gender']);
+$rel_stmt->execute();
+$related = $rel_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 $page_title = htmlspecialchars($product['name']) . " – ChronoNest";
 $success = $_SESSION['success'] ?? '';
@@ -96,13 +96,13 @@ require_once '../includes/header.php';
                 <div class="bg-white rounded-xl border border-[#E0E2E7] overflow-hidden">
                     <?php if (!empty($images)): ?>
                     <div id="mainImageWrap" class="aspect-square overflow-hidden cursor-zoom-in relative">
-                        <img id="mainImage" src="../assets/uploads/products/<?= htmlspecialchars($images[0]['image_url']) ?>" alt="<?= htmlspecialchars($product['name']) ?>" class="w-full h-full object-cover transition-transform duration-300 hover:scale-150" style="transform-origin: center center;" onmousemove="const r=this.getBoundingClientRect();const x=((event.clientX-r.left)/r.width)*100;const y=((event.clientY-r.top)/r.height)*100;this.style.transformOrigin=x+'% '+y+'%'" onmouseleave="this.style.transformOrigin='center center';this.style.transform='scale(1)'" onmouseenter="this.style.transform='scale(1.8)'">
+                        <img id="mainImage" src="../assets/uploads/products/<?= htmlspecialchars(basename($images[0]['image_url'])) ?>" alt="<?= htmlspecialchars($product['name']) ?>" class="w-full h-full object-cover transition-transform duration-300 hover:scale-150" style="transform-origin: center center;" onmousemove="const r=this.getBoundingClientRect();const x=((event.clientX-r.left)/r.width)*100;const y=((event.clientY-r.top)/r.height)*100;this.style.transformOrigin=x+'% '+y+'%'" onmouseleave="this.style.transformOrigin='center center';this.style.transform='scale(1)'" onmouseenter="this.style.transform='scale(1.8)'">
                     </div>
                     <?php if (count($images) > 1): ?>
                     <div class="flex gap-2 p-3 overflow-x-auto">
                         <?php foreach ($images as $i => $img): ?>
-                        <button onclick="document.getElementById('mainImage').src='../assets/uploads/products/<?= htmlspecialchars($img['image_url']) ?>';document.querySelectorAll('.thumb-btn').forEach(b=>b.classList.remove('ring-2','ring-[#C9A84C]'));this.classList.add('ring-2','ring-[#C9A84C]')" class="thumb-btn w-16 h-16 rounded-lg border border-[#E0E2E7] overflow-hidden flex-shrink-0 <?= $i === 0 ? 'ring-2 ring-[#C9A84C]' : '' ?> hover:border-[#C9A84C] transition-all duration-150">
-                            <img src="../assets/uploads/products/<?= htmlspecialchars($img['image_url']) ?>" alt="" class="w-full h-full object-cover">
+                        <button onclick="document.getElementById('mainImage').src='../assets/uploads/products/<?= htmlspecialchars(basename($img['image_url'])) ?>';document.querySelectorAll('.thumb-btn').forEach(b=>b.classList.remove('ring-2','ring-[#C9A84C]'));this.classList.add('ring-2','ring-[#C9A84C]')" class="thumb-btn w-16 h-16 rounded-lg border border-[#E0E2E7] overflow-hidden flex-shrink-0 <?= $i === 0 ? 'ring-2 ring-[#C9A84C]' : '' ?> hover:border-[#C9A84C] transition-all duration-150">
+                            <img src="../assets/uploads/products/<?= htmlspecialchars(basename($img['image_url'])) ?>" alt="" class="w-full h-full object-cover">
                         </button>
                         <?php endforeach; ?>
                     </div>
@@ -329,7 +329,7 @@ require_once '../includes/header.php';
                 <a href="product-detail.php?slug=<?= urlencode($rp['slug']) ?>" class="group bg-white border border-[#E0E2E7] rounded-xl overflow-hidden hover:shadow-[0_8px_28px_rgba(0,0,0,0.14)] hover:-translate-y-1 transition-all duration-200 block">
                     <div class="relative bg-[#F7F8FA] aspect-square overflow-hidden">
                         <?php if ($rp['main_image']): ?>
-                        <img src="../assets/uploads/products/<?= htmlspecialchars($rp['main_image']) ?>" alt="<?= htmlspecialchars($rp['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+                        <img src="../assets/uploads/products/<?= htmlspecialchars(basename($rp['main_image'])) ?>" alt="<?= htmlspecialchars($rp['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                         <?php else: ?>
                         <div class="w-full h-full flex items-center justify-center"><svg class="w-12 h-12 text-[#E0E2E7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1"/><path stroke-linecap="round" stroke-width="1" d="M12 6v6l4 2"/></svg></div>
                         <?php endif; ?>

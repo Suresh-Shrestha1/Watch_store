@@ -19,31 +19,29 @@ $action = $_POST['action'] ?? '';
 // ADD PRODUCT
 if ($action === 'add') {
 
-    // Get all form data
-    $model_number     = trim($_POST['model_number'] ?? '');
-    $name             = trim($_POST['name'] ?? '');
-    $brand_id         = intval($_POST['brand_id'] ?? 0);
-    $gender           = trim($_POST['gender'] ?? '');
-    $price            = floatval($_POST['price'] ?? 0);
-    $stock_quantity   = intval($_POST['stock_quantity'] ?? 0);
-    $movement_type    = trim($_POST['movement_type'] ?? '-');
-    $dial_shape       = trim($_POST['dial_shape'] ?? 'Round');
-    $dial_color       = trim($_POST['dial_color'] ?? '');
-    $case_diameter_mm = trim($_POST['case_diameter_mm'] ?? '');
-    $case_material    = trim($_POST['case_material'] ?? '');
-    $strap_material   = trim($_POST['strap_material'] ?? '');
-    $strap_color      = trim($_POST['strap_color'] ?? '');
-    $strap_adjustable = isset($_POST['strap_adjustable']) ? 1 : 0;
-    $strap_length_mm  = trim($_POST['strap_length_mm'] ?? '');
+    $model_number       = trim($_POST['model_number'] ?? '');
+    $name               = trim($_POST['name'] ?? '');
+    $brand_id           = intval($_POST['brand_id'] ?? 0);
+    $gender             = trim($_POST['gender'] ?? '');
+    $price              = floatval($_POST['price'] ?? 0);
+    $stock_quantity     = intval($_POST['stock_quantity'] ?? 0);
+    $movement_type      = trim($_POST['movement_type'] ?? '-');
+    $dial_shape         = trim($_POST['dial_shape'] ?? 'Round');
+    $dial_color         = trim($_POST['dial_color'] ?? '');
+    $case_diameter_mm   = trim($_POST['case_diameter_mm'] ?? '');
+    $case_material      = trim($_POST['case_material'] ?? '');
+    $strap_material     = trim($_POST['strap_material'] ?? '');
+    $strap_color        = trim($_POST['strap_color'] ?? '');
+    $strap_adjustable   = isset($_POST['strap_adjustable']) ? 1 : 0;
+    $strap_length_mm    = trim($_POST['strap_length_mm'] ?? '');
     $strap_size_options = trim($_POST['strap_size_options'] ?? '');
-    $water_resistance = trim($_POST['water_resistance'] ?? '');
-    $features         = trim($_POST['features'] ?? '');
-    $description      = trim($_POST['description'] ?? '');
-    $warranty_years   = intval($_POST['warranty_years'] ?? 2);
-    $is_expensive     = isset($_POST['is_expensive']) ? 1 : 0;
-    $is_active        = isset($_POST['is_active']) ? 1 : 0;
+    $water_resistance   = trim($_POST['water_resistance'] ?? '');
+    $features           = trim($_POST['features'] ?? '');
+    $description        = trim($_POST['description'] ?? '');
+    $warranty_years     = intval($_POST['warranty_years'] ?? 2);
+    $is_expensive       = isset($_POST['is_expensive']) ? 1 : 0;
+    $is_active          = isset($_POST['is_active']) ? 1 : 0;
 
-    // --- Validation ---
     if (empty($model_number) || empty($name) || $brand_id <= 0 || empty($gender) || $price <= 0) {
         $_SESSION['product_error'] = 'Please fill in all required fields (Model Number, Name, Brand, Gender, Price).';
         $_SESSION['product_form'] = $_POST;
@@ -51,12 +49,10 @@ if ($action === 'add') {
         exit();
     }
 
-    // Create slug from name
     $slug = strtolower(trim($name));
     $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
     $slug = trim($slug, '-');
 
-    // Check if model number or slug already exists
     $check = $conn->prepare("SELECT id FROM products WHERE model_number = ? OR slug = ?");
     $check->bind_param("ss", $model_number, $slug);
     $check->execute();
@@ -69,19 +65,17 @@ if ($action === 'add') {
     }
     $check->close();
 
-    // Handle empty optional fields — set to null
-    $case_diameter_mm = !empty($case_diameter_mm) ? floatval($case_diameter_mm) : null;
-    $strap_length_mm  = !empty($strap_length_mm) ? floatval($strap_length_mm) : null;
-    $dial_color       = !empty($dial_color) ? $dial_color : null;
-    $case_material    = !empty($case_material) ? $case_material : null;
-    $strap_material   = !empty($strap_material) ? $strap_material : null;
-    $strap_color      = !empty($strap_color) ? $strap_color : null;
+    $case_diameter_mm   = !empty($case_diameter_mm) ? floatval($case_diameter_mm) : null;
+    $strap_length_mm    = !empty($strap_length_mm) ? floatval($strap_length_mm) : null;
+    $dial_color         = !empty($dial_color) ? $dial_color : null;
+    $case_material      = !empty($case_material) ? $case_material : null;
+    $strap_material     = !empty($strap_material) ? $strap_material : null;
+    $strap_color        = !empty($strap_color) ? $strap_color : null;
     $strap_size_options = !empty($strap_size_options) ? $strap_size_options : null;
-    $water_resistance = !empty($water_resistance) ? $water_resistance : null;
-    $features         = !empty($features) ? $features : null;
-    $description      = !empty($description) ? $description : null;
+    $water_resistance   = !empty($water_resistance) ? $water_resistance : null;
+    $features           = !empty($features) ? $features : null;
+    $description        = !empty($description) ? $description : null;
 
-    // --- Insert Product ---
     $stmt = $conn->prepare("
         INSERT INTO products (
             model_number, name, slug, brand_id, gender,
@@ -104,26 +98,22 @@ if ($action === 'add') {
     );
 
     if ($stmt->execute()) {
-        $product_id = $stmt->insert_id; // Get the ID of newly inserted product
+        $product_id = $stmt->insert_id;
         $stmt->close();
 
-        // --- Handle Image Uploads ---
-        if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
+        if (isset($_FILES['images']) && is_array($_FILES['images']['name']) && count(array_filter($_FILES['images']['name'])) > 0) {
 
-            $upload_dir = '../assets/uploads/products/';
+            $upload_dir = '../../assets/uploads/products/';
             if (!is_dir($upload_dir)) {
                 mkdir($upload_dir, 0755, true);
             }
 
-            $allowed_types = ['image/jpeg', 'image/png', 'image/webp'];
-            $max_size = 5 * 1024 * 1024; // 5MB per image
+            $allowed_types  = ['image/jpeg', 'image/png', 'image/webp'];
+            $max_size       = 5 * 1024 * 1024;
             $main_image_set = false;
 
-            // Loop through each uploaded file
-            // $_FILES['images']['name'] is an array when input has multiple attribute
             for ($i = 0; $i < count($_FILES['images']['name']); $i++) {
 
-                // Skip if no file in this slot
                 if ($_FILES['images']['error'][$i] !== 0) continue;
 
                 $file_type = $_FILES['images']['type'][$i];
@@ -131,30 +121,22 @@ if ($action === 'add') {
                 $file_tmp  = $_FILES['images']['tmp_name'][$i];
                 $file_name = $_FILES['images']['name'][$i];
 
-                // Validate type
                 if (!in_array($file_type, $allowed_types)) continue;
-
-                // Validate size
                 if ($file_size > $max_size) continue;
 
-                // Create unique filename
-                $extension = pathinfo($file_name, PATHINFO_EXTENSION);
+                $extension    = pathinfo($file_name, PATHINFO_EXTENSION);
                 $new_filename = $slug . '-' . time() . '-' . $i . '.' . $extension;
 
-                // Move file
                 if (move_uploaded_file($file_tmp, $upload_dir . $new_filename)) {
 
-                    $image_url = 'uploads/products/' . $new_filename;
-
-                    // First image becomes the main image
-                    $is_main = (!$main_image_set) ? 1 : 0;
+                    // store filename only in DB; templates will build the full path
+                    $image_name = $new_filename;
+                    $is_main   = (!$main_image_set) ? 1 : 0;
                     if ($is_main) $main_image_set = true;
-
                     $sort_order = $i;
 
-                    // Insert image record into database
                     $img_stmt = $conn->prepare("INSERT INTO product_images (product_id, image_url, is_main, sort_order) VALUES (?, ?, ?, ?)");
-                    $img_stmt->bind_param("isii", $product_id, $image_url, $is_main, $sort_order);
+                    $img_stmt->bind_param("isii", $product_id, $image_name, $is_main, $sort_order);
                     $img_stmt->execute();
                     $img_stmt->close();
                 }
@@ -188,43 +170,39 @@ if ($action === 'edit') {
         exit();
     }
 
-    // Get form data
-    $model_number     = trim($_POST['model_number'] ?? '');
-    $name             = trim($_POST['name'] ?? '');
-    $brand_id         = intval($_POST['brand_id'] ?? 0);
-    $gender           = trim($_POST['gender'] ?? '');
-    $price            = floatval($_POST['price'] ?? 0);
-    $stock_quantity   = intval($_POST['stock_quantity'] ?? 0);
-    $movement_type    = trim($_POST['movement_type'] ?? '-');
-    $dial_shape       = trim($_POST['dial_shape'] ?? 'Round');
-    $dial_color       = trim($_POST['dial_color'] ?? '');
-    $case_diameter_mm = trim($_POST['case_diameter_mm'] ?? '');
-    $case_material    = trim($_POST['case_material'] ?? '');
-    $strap_material   = trim($_POST['strap_material'] ?? '');
-    $strap_color      = trim($_POST['strap_color'] ?? '');
-    $strap_adjustable = isset($_POST['strap_adjustable']) ? 1 : 0;
-    $strap_length_mm  = trim($_POST['strap_length_mm'] ?? '');
+    $model_number       = trim($_POST['model_number'] ?? '');
+    $name               = trim($_POST['name'] ?? '');
+    $brand_id           = intval($_POST['brand_id'] ?? 0);
+    $gender             = trim($_POST['gender'] ?? '');
+    $price              = floatval($_POST['price'] ?? 0);
+    $stock_quantity     = intval($_POST['stock_quantity'] ?? 0);
+    $movement_type      = trim($_POST['movement_type'] ?? '-');
+    $dial_shape         = trim($_POST['dial_shape'] ?? 'Round');
+    $dial_color         = trim($_POST['dial_color'] ?? '');
+    $case_diameter_mm   = trim($_POST['case_diameter_mm'] ?? '');
+    $case_material      = trim($_POST['case_material'] ?? '');
+    $strap_material     = trim($_POST['strap_material'] ?? '');
+    $strap_color        = trim($_POST['strap_color'] ?? '');
+    $strap_adjustable   = isset($_POST['strap_adjustable']) ? 1 : 0;
+    $strap_length_mm    = trim($_POST['strap_length_mm'] ?? '');
     $strap_size_options = trim($_POST['strap_size_options'] ?? '');
-    $water_resistance = trim($_POST['water_resistance'] ?? '');
-    $features         = trim($_POST['features'] ?? '');
-    $description      = trim($_POST['description'] ?? '');
-    $warranty_years   = intval($_POST['warranty_years'] ?? 2);
-    $is_expensive     = isset($_POST['is_expensive']) ? 1 : 0;
-    $is_active        = isset($_POST['is_active']) ? 1 : 0;
+    $water_resistance   = trim($_POST['water_resistance'] ?? '');
+    $features           = trim($_POST['features'] ?? '');
+    $description        = trim($_POST['description'] ?? '');
+    $warranty_years     = intval($_POST['warranty_years'] ?? 2);
+    $is_expensive       = isset($_POST['is_expensive']) ? 1 : 0;
+    $is_active          = isset($_POST['is_active']) ? 1 : 0;
 
-    // Validation
     if (empty($model_number) || empty($name) || $brand_id <= 0 || empty($gender) || $price <= 0) {
         $_SESSION['product_error'] = 'Please fill in all required fields.';
         header("Location: ../edit-product.php?id=$id");
         exit();
     }
 
-    // Create slug
     $slug = strtolower(trim($name));
     $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
     $slug = trim($slug, '-');
 
-    // Check duplicate (exclude current product)
     $check = $conn->prepare("SELECT id FROM products WHERE (model_number = ? OR slug = ?) AND id != ?");
     $check->bind_param("ssi", $model_number, $slug, $id);
     $check->execute();
@@ -236,19 +214,17 @@ if ($action === 'edit') {
     }
     $check->close();
 
-    // Handle optional fields
-    $case_diameter_mm = !empty($case_diameter_mm) ? floatval($case_diameter_mm) : null;
-    $strap_length_mm  = !empty($strap_length_mm) ? floatval($strap_length_mm) : null;
-    $dial_color       = !empty($dial_color) ? $dial_color : null;
-    $case_material    = !empty($case_material) ? $case_material : null;
-    $strap_material   = !empty($strap_material) ? $strap_material : null;
-    $strap_color      = !empty($strap_color) ? $strap_color : null;
+    $case_diameter_mm   = !empty($case_diameter_mm) ? floatval($case_diameter_mm) : null;
+    $strap_length_mm    = !empty($strap_length_mm) ? floatval($strap_length_mm) : null;
+    $dial_color         = !empty($dial_color) ? $dial_color : null;
+    $case_material      = !empty($case_material) ? $case_material : null;
+    $strap_material     = !empty($strap_material) ? $strap_material : null;
+    $strap_color        = !empty($strap_color) ? $strap_color : null;
     $strap_size_options = !empty($strap_size_options) ? $strap_size_options : null;
-    $water_resistance = !empty($water_resistance) ? $water_resistance : null;
-    $features         = !empty($features) ? $features : null;
-    $description      = !empty($description) ? $description : null;
+    $water_resistance   = !empty($water_resistance) ? $water_resistance : null;
+    $features           = !empty($features) ? $features : null;
+    $description        = !empty($description) ? $description : null;
 
-    // Update product
     $stmt = $conn->prepare("
         UPDATE products SET
             model_number = ?, name = ?, slug = ?, brand_id = ?, gender = ?,
@@ -273,56 +249,54 @@ if ($action === 'edit') {
 
     if ($stmt->execute()) {
 
-        // --- Handle New Image Uploads ---
-        if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
+        if (isset($_FILES['images']) && is_array($_FILES['images']['name']) && count(array_filter($_FILES['images']['name'])) > 0) {
 
-            $upload_dir = '../assets/uploads/products/';
+            $upload_dir = '../../assets/uploads/products/';
             if (!is_dir($upload_dir)) {
                 mkdir($upload_dir, 0755, true);
             }
 
             $allowed_types = ['image/jpeg', 'image/png', 'image/webp'];
-            $max_size = 5 * 1024 * 1024;
+            $max_size      = 5 * 1024 * 1024;
 
-            // Check if product already has a main image
             $main_check = $conn->prepare("SELECT id FROM product_images WHERE product_id = ? AND is_main = 1");
             $main_check->bind_param("i", $id);
             $main_check->execute();
             $has_main = $main_check->get_result()->num_rows > 0;
             $main_check->close();
 
-            // Get current max sort order
             $sort_check = $conn->prepare("SELECT MAX(sort_order) as max_sort FROM product_images WHERE product_id = ?");
             $sort_check->bind_param("i", $id);
             $sort_check->execute();
-            $sort_row = $sort_check->get_result()->fetch_assoc();
+            $sort_row     = $sort_check->get_result()->fetch_assoc();
             $current_sort = ($sort_row['max_sort'] !== null) ? $sort_row['max_sort'] + 1 : 0;
             $sort_check->close();
 
-            for ($i = 0; $i < count($_FILES['images']['name']); $i++) {
+            for ($idx = 0; $idx < count($_FILES['images']['name']); $idx++) {
 
-                if ($_FILES['images']['error'][$i] !== 0) continue;
+                if ($_FILES['images']['error'][$idx] !== 0) continue;
 
-                $file_type = $_FILES['images']['type'][$i];
-                $file_size = $_FILES['images']['size'][$i];
-                $file_tmp  = $_FILES['images']['tmp_name'][$i];
-                $file_name = $_FILES['images']['name'][$i];
+                $file_type = $_FILES['images']['type'][$idx];
+                $file_size = $_FILES['images']['size'][$idx];
+                $file_tmp  = $_FILES['images']['tmp_name'][$idx];
+                $file_name = $_FILES['images']['name'][$idx];
 
                 if (!in_array($file_type, $allowed_types)) continue;
                 if ($file_size > $max_size) continue;
 
-                $extension = pathinfo($file_name, PATHINFO_EXTENSION);
-                $new_filename = $slug . '-' . time() . '-' . $i . '.' . $extension;
+                $extension    = pathinfo($file_name, PATHINFO_EXTENSION);
+                $new_filename = $slug . '-' . time() . '-' . $idx . '.' . $extension;
 
                 if (move_uploaded_file($file_tmp, $upload_dir . $new_filename)) {
 
-                    $image_url = 'uploads/products/' . $new_filename;
-                    $is_main = (!$has_main && $i === 0) ? 1 : 0;
+                    // store filename only
+                    $image_name = $new_filename;
+                    $is_main    = (!$has_main && $idx === 0) ? 1 : 0;
                     if ($is_main) $has_main = true;
-                    $sort_order = $current_sort + $i;
+                    $sort_order = $current_sort + $idx;
 
                     $img_stmt = $conn->prepare("INSERT INTO product_images (product_id, image_url, is_main, sort_order) VALUES (?, ?, ?, ?)");
-                    $img_stmt->bind_param("isii", $id, $image_url, $is_main, $sort_order);
+                    $img_stmt->bind_param("isii", $id, $image_name, $is_main, $sort_order);
                     $img_stmt->execute();
                     $img_stmt->close();
                 }
@@ -330,6 +304,7 @@ if ($action === 'edit') {
         }
 
         $_SESSION['product_success'] = 'Product updated successfully.';
+
     } else {
         $_SESSION['product_error'] = 'Failed to update product.';
     }
@@ -352,7 +327,6 @@ if ($action === 'delete') {
         exit();
     }
 
-    // Check if product has orders
     $check = $conn->prepare("SELECT COUNT(*) as total FROM order_items WHERE product_id = ?");
     $check->bind_param("i", $id);
     $check->execute();
@@ -365,25 +339,24 @@ if ($action === 'delete') {
         exit();
     }
 
-    // Get all images for this product before deleting
-    $img_result = $conn->prepare("SELECT image_url FROM product_images WHERE product_id = ?");
+    $img_result  = $conn->prepare("SELECT image_url FROM product_images WHERE product_id = ?");
     $img_result->bind_param("i", $id);
     $img_result->execute();
-    $images = $img_result->get_result();
+    $images      = $img_result->get_result();
     $image_paths = [];
     while ($img = $images->fetch_assoc()) {
         $image_paths[] = $img['image_url'];
     }
     $img_result->close();
 
-    // Delete product (product_images will cascade delete)
     $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
     $stmt->bind_param("i", $id);
 
     if ($stmt->execute()) {
-        // Delete image files from server
         foreach ($image_paths as $path) {
-            $full_path = '../assets/' . $path;
+            // handle both filename-only and legacy stored paths
+            $filename = basename($path);
+            $full_path = '../../assets/uploads/products/' . $filename;
             if (file_exists($full_path)) {
                 unlink($full_path);
             }
@@ -412,7 +385,6 @@ if ($action === 'delete_image') {
         exit();
     }
 
-    // Get image path
     $stmt = $conn->prepare("SELECT image_url, is_main FROM product_images WHERE id = ? AND product_id = ?");
     $stmt->bind_param("ii", $image_id, $product_id);
     $stmt->execute();
@@ -422,26 +394,23 @@ if ($action === 'delete_image') {
         $image = $result->fetch_assoc();
         $stmt->close();
 
-        // Delete from database
         $del = $conn->prepare("DELETE FROM product_images WHERE id = ?");
         $del->bind_param("i", $image_id);
         $del->execute();
         $del->close();
 
-        // Delete file from server
-        $full_path = '../assets/' . $image['image_url'];
+        $full_path = '../../assets/uploads/products/' . basename($image['image_url']);
         if (file_exists($full_path)) {
             unlink($full_path);
         }
 
-        // If deleted image was main, make the first remaining image the main
         if ($image['is_main'] == 1) {
             $next = $conn->prepare("SELECT id FROM product_images WHERE product_id = ? ORDER BY sort_order ASC LIMIT 1");
             $next->bind_param("i", $product_id);
             $next->execute();
             $next_result = $next->get_result();
             if ($next_result->num_rows > 0) {
-                $next_img = $next_result->fetch_assoc();
+                $next_img    = $next_result->fetch_assoc();
                 $update_main = $conn->prepare("UPDATE product_images SET is_main = 1 WHERE id = ?");
                 $update_main->bind_param("i", $next_img['id']);
                 $update_main->execute();
@@ -474,13 +443,11 @@ if ($action === 'set_main_image') {
         exit();
     }
 
-    // Remove main from all images of this product
     $reset = $conn->prepare("UPDATE product_images SET is_main = 0 WHERE product_id = ?");
     $reset->bind_param("i", $product_id);
     $reset->execute();
     $reset->close();
 
-    // Set selected image as main
     $set = $conn->prepare("UPDATE product_images SET is_main = 1 WHERE id = ? AND product_id = ?");
     $set->bind_param("ii", $image_id, $product_id);
     $set->execute();
@@ -496,7 +463,7 @@ if ($action === 'set_main_image') {
 // TOGGLE STATUS
 if ($action === 'toggle_status') {
 
-    $id = intval($_POST['id'] ?? 0);
+    $id             = intval($_POST['id'] ?? 0);
     $current_status = intval($_POST['current_status'] ?? 0);
 
     if ($id <= 0) {
@@ -524,7 +491,6 @@ if ($action === 'toggle_status') {
 }
 
 
-// No matching action
 header('Location: ../products.php');
 exit();
 ?>

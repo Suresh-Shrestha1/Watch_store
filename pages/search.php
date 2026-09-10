@@ -8,14 +8,14 @@ $products = [];
 
 if ($query !== '') {
     $search_term = "%$query%";
-    $stmt = mysqli_prepare($conn, "SELECT p.id, p.name, p.slug, p.price, p.gender, p.movement_type, p.stock_quantity, b.name as brand_name,
+    $stmt = $conn->prepare("SELECT p.id, p.name, p.slug, p.price, p.gender, p.movement_type, p.stock_quantity, b.name as brand_name,
         (SELECT image_url FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) as main_image
         FROM products p JOIN brands b ON p.brand_id = b.id
         WHERE p.is_active = 1 AND (p.name LIKE ? OR p.model_number LIKE ? OR b.name LIKE ?)
         ORDER BY p.created_at DESC LIMIT 40");
-    mysqli_stmt_bind_param($stmt, "sss", $search_term, $search_term, $search_term);
-    mysqli_stmt_execute($stmt);
-    $products = mysqli_fetch_all(mysqli_stmt_get_result($stmt), MYSQLI_ASSOC);
+    $stmt->bind_param("sss", $search_term, $search_term, $search_term);
+    $stmt->execute();
+    $products = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 
 require_once '../includes/header.php';
@@ -79,7 +79,7 @@ require_once '../includes/header.php';
             <a href="product-detail.php?slug=<?= urlencode($product['slug']) ?>" class="group bg-white border border-[#E0E2E7] rounded-xl overflow-hidden hover:shadow-[0_8px_28px_rgba(0,0,0,0.14)] hover:-translate-y-1 transition-all duration-200 block">
                 <div class="relative bg-[#F7F8FA] aspect-square overflow-hidden">
                     <?php if ($product['main_image']): ?>
-                    <img src="../assets/uploads/products/<?= htmlspecialchars($product['main_image']) ?>" alt="<?= htmlspecialchars($product['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+                    <img src="../assets/uploads/products/<?= htmlspecialchars(basename($product['main_image'])) ?>" alt="<?= htmlspecialchars($product['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                     <?php else: ?>
                     <div class="w-full h-full flex items-center justify-center"><svg class="w-16 h-16 text-[#E0E2E7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1"/><path stroke-linecap="round" stroke-width="1" d="M12 6v6l4 2"/></svg></div>
                     <?php endif; ?>

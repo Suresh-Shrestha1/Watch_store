@@ -102,7 +102,7 @@ $pay_colors = [
 
                 <!-- Delete Button — only for pending unpaid orders -->
                 <?php if ($order['order_status'] === 'pending' && $order['payment_status'] !== 'paid'): ?>
-                    <form method="POST" action="actions/order_action.php" onsubmit="return confirm('Are you sure you want to delete this order?');">
+                    <form method="POST" action="actions/order-action.php" onsubmit="return confirm('Are you sure you want to delete this order?');">
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                         <button type="submit" class="h-10 px-5 rounded-lg text-sm font-semibold transition-all duration-200" style="background: none; border: 1px solid rgba(214,69,69,0.3); color: #D64545; cursor: pointer;" onmouseover="this.style.backgroundColor='#FDEAEA';" onmouseout="this.style.backgroundColor='transparent';">Delete Order</button>
@@ -188,7 +188,7 @@ $pay_colors = [
 
                                     <!-- Product Image -->
                                     <?php if (!empty($item['product_image'])): ?>
-                                        <img src="../<?php echo htmlspecialchars($item['product_image']); ?>" alt="" class="w-14 h-14 rounded object-cover flex-shrink-0" style="border: 1px solid #E0E2E7;">
+                                        <img src="../assets/uploads/products/<?php echo htmlspecialchars(basename($item['product_image'])); ?>" alt="" class="w-14 h-14 rounded object-cover flex-shrink-0" style="border: 1px solid #E0E2E7;">
                                     <?php else: ?>
                                         <div class="w-14 h-14 rounded flex items-center justify-center flex-shrink-0 text-xs" style="background-color: #F7F8FA; border: 1px solid #E0E2E7; color: #8A8F99;">No img</div>
                                     <?php endif; ?>
@@ -239,7 +239,7 @@ $pay_colors = [
                     <div class="bg-white rounded-lg p-5" style="border: 1px solid #E0E2E7;">
                         <h3 class="font-semibold text-base mb-3" style="color: #1A1A2E;">Admin Notes</h3>
 
-                        <form method="POST" action="actions/order_action.php">
+                        <form method="POST" action="actions/order-action.php">
                             <input type="hidden" name="action" value="update_notes">
                             <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
 
@@ -278,7 +278,7 @@ $pay_colors = [
 
                             <!-- Link to customer profile if user_id exists -->
                             <?php if (!empty($order['user_id'])): ?>
-                                <a href="customer_detail.php?id=<?php echo $order['user_id']; ?>" class="inline-block text-xs font-medium no-underline mt-1" style="color: #1565C0;">View Customer Profile</a>
+                                <a href="customer-detail.php?id=<?php echo $order['user_id']; ?>" class="inline-block text-xs font-medium no-underline mt-1" style="color: #1565C0;">View Customer Profile</a>
                             <?php else: ?>
                                 <p class="text-xs mt-1" style="color: #8A8F99;">Guest checkout (no account)</p>
                             <?php endif; ?>
@@ -313,7 +313,7 @@ $pay_colors = [
                         <?php if (strtolower($order['payment_method']) === 'cod'): ?>
 
                         <!-- Update Payment Status -->
-                        <form method="POST" action="actions/order_action.php" class="mt-4 pt-4" style="border-top: 1px solid #E0E2E7;">
+                        <form method="POST" action="actions/order-action.php" class="mt-4 pt-4" style="border-top: 1px solid #E0E2E7;">
                             <input type="hidden" name="action" value="update_payment">
                             <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
 
@@ -358,7 +358,7 @@ $pay_colors = [
                             ?>
 
                             <?php if ($next_status): ?>
-                                <form method="POST" action="actions/order_action.php">
+                                <form method="POST" action="actions/order-action.php">
                                     <input type="hidden" name="action" value="update_status">
                                     <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                                     <input type="hidden" name="new_status" value="<?php echo $next_status; ?>">

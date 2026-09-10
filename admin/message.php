@@ -21,8 +21,10 @@ require_once 'includes/topbar.php';
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="min-h-screen" style="background-color: #F7F8FA; font-family: 'Inter', sans-serif;">
-    <main class="lg:ml-[260px] p-6 max-[767px]:p-4">
-        <h1>It is admin message page.</h1>
+    <main class="lg:ml-64 pt-16">
+        <div class="p-4 lg:p-6">
+            <h1>It is admin message page.</h1>
+        </div>
     </main>
 </body>
 </html>

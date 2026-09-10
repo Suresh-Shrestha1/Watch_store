@@ -35,28 +35,28 @@ if ($action === 'register') {
     }
 
     // Check duplicate email
-    $check = mysqli_prepare($conn, "SELECT id FROM users WHERE email = ?");
-    mysqli_stmt_bind_param($check, "s", $email);
-    mysqli_stmt_execute($check);
-    if (mysqli_stmt_get_result($check)->num_rows > 0) {
+    $check = $conn->prepare("SELECT id FROM users WHERE email = ?");
+    $check->bind_param("s", $email);
+    $check->execute();
+    if ($check->get_result()->num_rows > 0) {
         $_SESSION['error'] = 'Email is already registered.';
         header('Location: ../register.php'); exit;
     }
 
     // Check duplicate phone
-    $check2 = mysqli_prepare($conn, "SELECT id FROM users WHERE phone = ?");
-    mysqli_stmt_bind_param($check2, "s", $phone);
-    mysqli_stmt_execute($check2);
-    if (mysqli_stmt_get_result($check2)->num_rows > 0) {
+    $check2 = $conn->prepare("SELECT id FROM users WHERE phone = ?");
+    $check2->bind_param("s", $phone);
+    $check2->execute();
+    if ($check2->get_result()->num_rows > 0) {
         $_SESSION['error'] = 'Phone number is already registered.';
         header('Location: ../register.php'); exit;
     }
 
     $hashed = password_hash($password, PASSWORD_DEFAULT);
-    $stmt = mysqli_prepare($conn, "INSERT INTO users (name, email, phone, password, role) VALUES (?, ?, ?, ?, 'customer')");
-    mysqli_stmt_bind_param($stmt, "ssss", $name, $email, $phone, $hashed);
+    $stmt = $conn->prepare("INSERT INTO users (name, email, phone, password, role) VALUES (?, ?, ?, ?, 'customer')");
+    $stmt->bind_param("ssss", $name, $email, $phone, $hashed);
 
-    if (mysqli_stmt_execute($stmt)) {
+    if ($stmt->execute()) {
         unset($_SESSION['old_input']);
         $_SESSION['success'] = 'Account created successfully! Please log in.';
         header('Location: ../login.php');
@@ -78,10 +78,10 @@ if ($action === 'login') {
         header('Location: ../login.php'); exit;
     }
 
-    $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE email = ? AND role = 'customer'");
-    mysqli_stmt_bind_param($stmt, "s", $email);
-    mysqli_stmt_execute($stmt);
-    $user = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ? AND role = 'customer'");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
 
     if (!$user || !password_verify($password, $user['password'])) {
         $_SESSION['error'] = 'Invalid email or password.';
@@ -89,9 +89,9 @@ if ($action === 'login') {
     }
 
     // Update last login
-    $update = mysqli_prepare($conn, "UPDATE users SET last_login_at = NOW() WHERE id = ?");
-    mysqli_stmt_bind_param($update, "i", $user['id']);
-    mysqli_stmt_execute($update);
+    $update = $conn->prepare("UPDATE users SET last_login_at = NOW() WHERE id = ?");
+    $update->bind_param("i", $user['id']);
+    $update->execute();
 
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['user_name'] = $user['name'];

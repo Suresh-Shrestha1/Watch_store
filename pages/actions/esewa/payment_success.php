@@ -1,16 +1,13 @@
 <?php
-// ============================================================
-//  payment_success.php  –  eSewa calls this after payment
-// ============================================================
 session_start();
 require_once 'esewa_config.php';   // $conn + constants + signature fn
 
-// ── STEP 1: Make sure eSewa actually sent data ────────────────
+// Make sure eSewa actually sent data
 if (empty($_GET['data'])) {
     die("No payment data received from eSewa.");
 }
 
-// ── STEP 2: Base64-decode the JSON payload ───────────────────
+// Base64-decode the JSON payload
 $raw_data = $_GET['data'];
 $decoded  = base64_decode($raw_data, true);   // strict = true
 
@@ -24,18 +21,7 @@ if (!is_array($esewa_data)) {
     die("Could not parse eSewa response. Invalid JSON payload.");
 }
 
-/*
-  Expected $esewa_data keys:
-    transaction_code   – eSewa's own receipt number (e.g. "0007HBE")
-    status             – should be "COMPLETE"
-    total_amount       – e.g. "1500.0"  (note: may lack trailing zero)
-    transaction_uuid   – what we sent (e.g. "CN-20250604-XXXX-1717488000")
-    product_code       – e.g. "EPAYTEST"
-    signed_field_names – comma-separated list of signed keys
-    signature          – base64 HMAC we must verify
-*/
-
-// ── STEP 3: Extract fields ────────────────────────────────────
+// Extract fields
 $transaction_code  = $esewa_data['transaction_code']   ?? '';
 $status            = $esewa_data['status']             ?? '';
 $total_amount_raw  = $esewa_data['total_amount']       ?? '';
@@ -49,7 +35,7 @@ if (!$transaction_uuid || !$received_sig || !$signed_fields_str) {
     die("Incomplete eSewa response. Required fields are missing.");
 }
 
-// ── STEP 4: Verify signature (prove data wasn't tampered with) ─
+// Verify signature (prove data wasn't tampered with)
 // Rebuild the exact message eSewa signed, using signed_field_names order
 $signed_fields = explode(',', $signed_fields_str);
 $message_parts = [];
@@ -73,12 +59,12 @@ if (!hash_equals($expected_sig, $received_sig)) {
     die("Signature verification failed. This payment cannot be confirmed.");
 }
 
-// ── STEP 5: Confirm status is COMPLETE ───────────────────────
+// Confirm status is COMPLETE
 if (strtoupper($status) !== 'COMPLETE') {
     die("Payment not completed. eSewa status: " . htmlspecialchars($status));
 }
 
-// ── STEP 6: Double-verify with eSewa's server (anti-replay) ──
+// Double-verify with eSewa's server (anti-replay)
 // Normalize amount format for the API call
 $total_amount_for_api = number_format((float)$total_amount_raw, 2, '.', '');
 
@@ -114,10 +100,7 @@ if (!is_array($api_data) || strtoupper($api_data['status'] ?? '') !== 'COMPLETE'
     die("eSewa payment verification failed. Server status: $bad_status");
 }
 
-// ── STEP 7: Find our order from the transaction_uuid ─────────
-// We built uuid as: "<order_number>-<timestamp>"
-// Strip "-<digits>" suffix to recover the order_number
-// Example: "CN-20250604-A1B2-1717488000" → "CN-20250604-A1B2"
+// Find our order from the transaction_uuid
 $order_number = preg_replace('/-\d+$/', '', $transaction_uuid);
 
 if (!$order_number) {
@@ -141,7 +124,7 @@ if (!$order) {
         . htmlspecialchars($order_number));
 }
 
-// ── STEP 8: Update DB (idempotent – safe to run twice) ───────
+// Update DB (idempotent – safe to run twice)
 if ($order['payment_status'] !== 'paid') {
     $update = $conn->prepare(
         "UPDATE orders
@@ -168,86 +151,52 @@ if ($order['payment_status'] !== 'paid') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Successful – ChronoNest</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Arial, sans-serif;
-               background: #f0fbe8; min-height: 100vh;
-               display: flex; align-items: center; justify-content: center; }
-        .card { background: #fff; border-radius: 14px; padding: 40px 32px;
-                max-width: 500px; width: 100%; margin: 20px;
-                text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,.10); }
-        .checkmark { width: 70px; height: 70px; background: #60BB46;
-                     border-radius: 50%; display: flex;
-                     align-items: center; justify-content: center;
-                     margin: 0 auto 20px; }
-        .checkmark svg { width: 36px; height: 36px; stroke: #fff;
-                         fill: none; stroke-width: 3; }
-        h1 { color: #2d7d1a; font-size: 26px; margin-bottom: 8px; }
-        .subtitle { color: #555; font-size: 15px; margin-bottom: 24px; }
-        .detail-box { background: #f7f8fa; border-radius: 10px;
-                      padding: 18px; text-align: left; margin-bottom: 24px; }
-        .detail-row { display: flex; justify-content: space-between;
-                      padding: 6px 0; font-size: 14px;
-                      border-bottom: 1px solid #eee; }
-        .detail-row:last-child { border-bottom: none; }
-        .detail-label { color: #666; }
-        .detail-value { font-weight: 600; color: #1B2A4A; }
-        .btn { display: inline-block; padding: 13px 28px;
-               background: #1B2A4A; color: #fff; text-decoration: none;
-               border-radius: 8px; font-size: 15px; font-weight: 600;
-               margin: 6px; }
-        .btn-outline { background: transparent; border: 2px solid #1B2A4A;
-                       color: #1B2A4A; }
-        .esewa-badge { display: inline-block; background: #60BB46;
-                       color: #fff; padding: 3px 10px; border-radius: 20px;
-                       font-size: 12px; font-weight: 700; margin-left: 6px; }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<div class="card">
-    <div class="checkmark">
-        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+<body class="min-h-screen flex items-center justify-center bg-[#f0fbe8] font-['Segoe_UI',Arial,sans-serif]">
+    <div class="bg-white rounded-[14px] px-8 py-10 max-w-[500px] w-full mx-5 text-center shadow-[0_4px_20px_rgba(0,0,0,0.10)]">
+        <div class="w-[70px] h-[70px] bg-[#60BB46] rounded-full flex items-center justify-center mx-auto mb-5">
+            <svg class="w-9 h-9 stroke-white fill-none stroke-[3]" viewBox="0 0 24 24">
+                <polyline points="20 6 9 17 4 12" />
+            </svg>
+        </div>
+
+        <h1 class="text-[#2d7d1a] text-[26px] mb-2 font-bold">Payment Successful!</h1>
+
+        <p class="text-[#555] text-[15px] mb-6">
+            Your payment was verified and your order is confirmed.
+            <span class="inline-block bg-[#60BB46] text-white px-2.5 py-[3px] rounded-full text-xs font-bold ml-1.5">eSewa</span>
+        </p>
+
+        <div class="bg-[#f7f8fa] rounded-[10px] p-[18px] text-left mb-6">
+            <div class="flex justify-between py-1.5 text-sm border-b border-[#eee]">
+                <span class="text-[#666]">Order Number</span>
+                <span class="font-semibold text-[#1B2A4A]"><?= htmlspecialchars($order['order_number']) ?></span>
+            </div>
+
+            <div class="flex justify-between py-1.5 text-sm border-b border-[#eee]">
+                <span class="text-[#666]">eSewa Transaction ID</span>
+                <span class="font-semibold text-[#1B2A4A]"><?= htmlspecialchars($transaction_code) ?></span>
+            </div>
+
+            <div class="flex justify-between py-1.5 text-sm border-b border-[#eee]">
+                <span class="text-[#666]">Amount Paid</span>
+                <span class="font-semibold text-[#1B2A4A]">NPR <?= number_format((float)$order['grand_total'], 0) ?></span>
+            </div>
+
+            <div class="flex justify-between py-1.5 text-sm border-b border-[#eee]">
+                <span class="text-[#666]">Customer</span>
+                <span class="font-semibold text-[#1B2A4A]"><?= htmlspecialchars($order['customer_name']) ?></span>
+            </div>
+
+            <div class="flex justify-between py-1.5 text-sm">
+                <span class="text-[#666]">Payment Status</span>
+                <span class="font-semibold text-[#2d7d1a]">✔ Paid</span>
+            </div>
+        </div>
+
+        <a href="../../account/orders.php" class="inline-block px-7 py-[13px] bg-[#1B2A4A] hover:bg-[#15213b] text-white no-underline rounded-lg text-[15px] font-semibold m-1 transition-colors duration-200">View My Orders</a>
+        <a href="../../../index.php" class="inline-block px-7 py-[13px] bg-transparent hover:bg-[#1B2A4A] border-2 border-[#1B2A4A] text-[#1B2A4A] hover:text-white no-underline rounded-lg text-[15px] font-semibold m-1 transition-colors duration-200">Continue Shopping</a>
     </div>
-
-    <h1>Payment Successful!</h1>
-    <p class="subtitle">
-        Your payment was verified and your order is confirmed.
-        <span class="esewa-badge">eSewa</span>
-    </p>
-
-    <div class="detail-box">
-        <div class="detail-row">
-            <span class="detail-label">Order Number</span>
-            <span class="detail-value">
-                <?= htmlspecialchars($order['order_number']) ?>
-            </span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">eSewa Transaction ID</span>
-            <span class="detail-value">
-                <?= htmlspecialchars($transaction_code) ?>
-            </span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Amount Paid</span>
-            <span class="detail-value">
-                NPR <?= number_format((float)$order['grand_total'], 0) ?>
-            </span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Customer</span>
-            <span class="detail-value">
-                <?= htmlspecialchars($order['customer_name']) ?>
-            </span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Payment Status</span>
-            <span class="detail-value" style="color:#2d7d1a">✔ Paid</span>
-        </div>
-    </div>
-
-    <a href="../../account/orders.php" class="btn">View My Orders</a>
-    <a href="../../../index.php"        class="btn btn-outline">Continue Shopping</a>
-</div>
 </body>
 </html>

@@ -1,7 +1,4 @@
 <?php
-// ============================================================
-//  esewa_config.php  –  eSewa configuration + helpers
-// ============================================================
 
 require_once '../../../config/db.php';   // provides $conn
 
@@ -23,17 +20,7 @@ define('FAILURE_URL',
     'http://localhost/watch_store/pages/actions/esewa/payment_failure.php');
 
 
-// ── Signature generator ──────────────────────────────────────
-/**
- * Build the HMAC-SHA256 / base64 signature eSewa requires.
- *
- * Signed message format (exactly as eSewa documents):
- *   "total_amount=<amt>,transaction_uuid=<uuid>,product_code=<code>"
- *
- * @param  string|float $total_amount     Grand total (e.g. "1500.00")
- * @param  string       $transaction_uuid Your unique UUID for this payment
- * @return string                         Base64-encoded HMAC signature
- */
+// ── Signature generator 
 function generate_esewa_signature($total_amount, $transaction_uuid): string
 {
     // Format amount to exactly 2 decimal places — eSewa is strict

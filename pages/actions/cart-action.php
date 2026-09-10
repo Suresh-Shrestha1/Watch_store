@@ -22,10 +22,10 @@ if ($action === 'add') {
     }
 
     // Check product
-    $p_stmt = mysqli_prepare($conn, "SELECT stock_quantity, strap_adjustable, strap_size_options FROM products WHERE id = ? AND is_active = 1");
-    mysqli_stmt_bind_param($p_stmt, "i", $product_id);
-    mysqli_stmt_execute($p_stmt);
-    $product = mysqli_fetch_assoc(mysqli_stmt_get_result($p_stmt));
+    $p_stmt = $conn->prepare("SELECT stock_quantity, strap_adjustable, strap_size_options FROM products WHERE id = ? AND is_active = 1");
+    $p_stmt->bind_param("i", $product_id);
+    $p_stmt->execute();
+    $product = $p_stmt->get_result()->fetch_assoc();
 
     if (!$product) {
         $_SESSION['error'] = 'Product not found.';
@@ -53,14 +53,14 @@ if ($action === 'add') {
 
     // Check if already in cart (same product + same strap size)
     if ($strap_size === null) {
-        $check = mysqli_prepare($conn, "SELECT id, quantity FROM cart WHERE user_id = ? AND product_id = ? AND selected_strap_size IS NULL");
-        mysqli_stmt_bind_param($check, "ii", $user_id, $product_id);
+        $check = $conn->prepare("SELECT id, quantity FROM cart WHERE user_id = ? AND product_id = ? AND selected_strap_size IS NULL");
+        $check->bind_param("ii", $user_id, $product_id);
     } else {
-        $check = mysqli_prepare($conn, "SELECT id, quantity FROM cart WHERE user_id = ? AND product_id = ? AND selected_strap_size = ?");
-        mysqli_stmt_bind_param($check, "iis", $user_id, $product_id, $strap_size);
+        $check = $conn->prepare("SELECT id, quantity FROM cart WHERE user_id = ? AND product_id = ? AND selected_strap_size = ?");
+        $check->bind_param("iis", $user_id, $product_id, $strap_size);
     }
-    mysqli_stmt_execute($check);
-    $existing = mysqli_fetch_assoc(mysqli_stmt_get_result($check));
+    $check->execute();
+    $existing = $check->get_result()->fetch_assoc();
 
     if ($existing) {
         $new_qty = $existing['quantity'] + 1;
@@ -68,13 +68,13 @@ if ($action === 'add') {
             $_SESSION['error'] = 'Not enough stock available.';
             header("Location: $redirect_url"); exit;
         }
-        $upd = mysqli_prepare($conn, "UPDATE cart SET quantity = ? WHERE id = ?");
-        mysqli_stmt_bind_param($upd, "ii", $new_qty, $existing['id']);
-        mysqli_stmt_execute($upd);
+        $upd = $conn->prepare("UPDATE cart SET quantity = ? WHERE id = ?");
+        $upd->bind_param("ii", $new_qty, $existing['id']);
+        $upd->execute();
     } else {
-        $ins = mysqli_prepare($conn, "INSERT INTO cart (user_id, product_id, selected_strap_size, quantity) VALUES (?, ?, ?, 1)");
-        mysqli_stmt_bind_param($ins, "iis", $user_id, $product_id, $strap_size);
-        mysqli_stmt_execute($ins);
+        $ins = $conn->prepare("INSERT INTO cart (user_id, product_id, selected_strap_size, quantity) VALUES (?, ?, ?, 1)");
+        $ins->bind_param("iis", $user_id, $product_id, $strap_size);
+        $ins->execute();
     }
 
     $_SESSION['success'] = 'Added to cart successfully!';
@@ -87,10 +87,10 @@ if ($action === 'update') {
     $quantity = (int)($_POST['quantity'] ?? 1);
     if ($quantity < 1) $quantity = 1;
 
-    $check = mysqli_prepare($conn, "SELECT c.*, p.stock_quantity FROM cart c JOIN products p ON c.product_id = p.id WHERE c.id = ? AND c.user_id = ?");
-    mysqli_stmt_bind_param($check, "ii", $cart_id, $user_id);
-    mysqli_stmt_execute($check);
-    $cart_item = mysqli_fetch_assoc(mysqli_stmt_get_result($check));
+    $check = $conn->prepare("SELECT c.*, p.stock_quantity FROM cart c JOIN products p ON c.product_id = p.id WHERE c.id = ? AND c.user_id = ?");
+    $check->bind_param("ii", $cart_id, $user_id);
+    $check->execute();
+    $cart_item = $check->get_result()->fetch_assoc();
 
     if (!$cart_item) {
         $_SESSION['error'] = 'Cart item not found.';
@@ -101,9 +101,9 @@ if ($action === 'update') {
         header('Location: ../cart.php'); exit;
     }
 
-    $upd = mysqli_prepare($conn, "UPDATE cart SET quantity = ? WHERE id = ? AND user_id = ?");
-    mysqli_stmt_bind_param($upd, "iii", $quantity, $cart_id, $user_id);
-    mysqli_stmt_execute($upd);
+    $upd = $conn->prepare("UPDATE cart SET quantity = ? WHERE id = ? AND user_id = ?");
+    $upd->bind_param("iii", $quantity, $cart_id, $user_id);
+    $upd->execute();
 
     $_SESSION['success'] = 'Cart updated.';
     header('Location: ../cart.php');
@@ -112,9 +112,9 @@ if ($action === 'update') {
 
 if ($action === 'remove') {
     $cart_id = (int)($_POST['cart_id'] ?? 0);
-    $del = mysqli_prepare($conn, "DELETE FROM cart WHERE id = ? AND user_id = ?");
-    mysqli_stmt_bind_param($del, "ii", $cart_id, $user_id);
-    mysqli_stmt_execute($del);
+    $del = $conn->prepare("DELETE FROM cart WHERE id = ? AND user_id = ?");
+    $del->bind_param("ii", $cart_id, $user_id);
+    $del->execute();
     $_SESSION['success'] = 'Item removed from cart.';
     header('Location: ../cart.php');
     exit;

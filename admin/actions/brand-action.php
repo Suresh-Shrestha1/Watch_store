@@ -85,8 +85,8 @@ if ($action === 'add') {
         $new_filename = $slug . '-' . time() . '.' . $extension;
 
         if (move_uploaded_file($file['tmp_name'], $upload_dir . $new_filename)) {
-            // DB stores relative path from project root
-            $logo = 'assets/uploads/brands/' . $new_filename;
+            // store filename only in DB; templates will build the path
+            $logo = $new_filename;
         } else {
             $_SESSION['brand_error'] = 'Failed to upload logo. Please try again.';
             $_SESSION['brand_form'] = ['name' => $name, 'is_active' => $is_active];
@@ -152,6 +152,8 @@ if ($action === 'edit') {
     $check->close();
 
     // --- Handle Logo Upload ---
+    // Normalize existing logo to filename only (handles cases where path was stored)
+    $existing_logo = basename($_POST['existing_logo'] ?? '');
     $logo = $existing_logo; // Keep old logo by default
 
     if (isset($_FILES['logo']) && $_FILES['logo']['error'] === 0) {
@@ -182,11 +184,12 @@ if ($action === 'edit') {
         $new_filename = $slug . '-' . time() . '.' . $extension;
 
         if (move_uploaded_file($file['tmp_name'], $upload_dir . $new_filename)) {
-            if (!empty($existing_logo) && file_exists('../../' . $existing_logo)) {
-                unlink('../../' . $existing_logo);
+            if (!empty($existing_logo) && file_exists('../../assets/uploads/brands/' . $existing_logo)) {
+                unlink('../../assets/uploads/brands/' . $existing_logo);
             }
 
-            $logo = 'assets/uploads/brands/' . $new_filename;
+            // store filename only
+            $logo = $new_filename;
 
         } else {
             $_SESSION['brand_error'] = 'Failed to upload logo.';
@@ -249,8 +252,9 @@ if ($action === 'delete') {
     $stmt->bind_param("i", $id);
 
     if ($stmt->execute()) {
-        if (!empty($brand_data['logo']) && file_exists('../../' . $brand_data['logo'])) {
-            unlink('../../' . $brand_data['logo']);
+        $logo_file = basename($brand_data['logo'] ?? '');
+        if (!empty($logo_file) && file_exists('../../assets/uploads/brands/' . $logo_file)) {
+            unlink('../../assets/uploads/brands/' . $logo_file);
         }
 
         $_SESSION['brand_success'] = 'Brand deleted successfully.';

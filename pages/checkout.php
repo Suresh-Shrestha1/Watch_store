@@ -6,20 +6,20 @@ require_once '../config/db.php';
 $user_id = $_SESSION['user_id'];
 
 // Fetch user
-$user_stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE id = ?");
-mysqli_stmt_bind_param($user_stmt, "i", $user_id);
-mysqli_stmt_execute($user_stmt);
-$user = mysqli_fetch_assoc(mysqli_stmt_get_result($user_stmt));
+$user_stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$user_stmt->bind_param("i", $user_id);
+$user_stmt->execute();
+$user = $user_stmt->get_result()->fetch_assoc();
 
 // Fetch cart
 $cart_sql = "SELECT c.*, p.name, p.slug, p.price, p.stock_quantity, p.model_number, b.name as brand_name,
     (SELECT image_url FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) as main_image
     FROM cart c JOIN products p ON c.product_id = p.id JOIN brands b ON p.brand_id = b.id
     WHERE c.user_id = ? AND p.is_active = 1";
-$stmt = mysqli_prepare($conn, $cart_sql);
-mysqli_stmt_bind_param($stmt, "i", $user_id);
-mysqli_stmt_execute($stmt);
-$cart_items = mysqli_fetch_all(mysqli_stmt_get_result($stmt), MYSQLI_ASSOC);
+$stmt = $conn->prepare($cart_sql);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$cart_items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 if (empty($cart_items)) { header('Location: cart.php'); exit; }
 
@@ -137,7 +137,7 @@ require_once '../includes/header.php';
                             <div class="flex gap-3 pb-3 border-b border-[#F0F1F3] last:border-b-0 last:pb-0">
                                 <div class="w-14 h-14 rounded-lg bg-[#F7F8FA] overflow-hidden flex-shrink-0 border border-[#E0E2E7]">
                                     <?php if ($item['main_image']): ?>
-                                    <img src="../assets/uploads/products/<?= htmlspecialchars($item['main_image']) ?>" alt="" class="w-full h-full object-cover">
+                                    <img src="../assets/uploads/products/<?= htmlspecialchars(basename($item['main_image'])) ?>" alt="" class="w-full h-full object-cover">
                                     <?php endif; ?>
                                 </div>
                                 <div class="flex-1 min-w-0">

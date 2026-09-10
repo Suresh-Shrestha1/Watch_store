@@ -33,10 +33,10 @@ if ($action === 'place_order') {
         (SELECT image_url FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) as main_image
         FROM cart c JOIN products p ON c.product_id = p.id
         WHERE c.user_id = ? AND p.is_active = 1";
-    $stmt = mysqli_prepare($conn, $cart_sql);
-    mysqli_stmt_bind_param($stmt, "i", $user_id);
-    mysqli_stmt_execute($stmt);
-    $items = mysqli_fetch_all(mysqli_stmt_get_result($stmt), MYSQLI_ASSOC);
+    $stmt = $conn->prepare($cart_sql);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
     if (empty($items)) {
         $_SESSION['error'] = 'Your cart is empty.';
@@ -66,54 +66,54 @@ if ($action === 'place_order') {
     $payment_status = ($payment === 'COD') ? 'pending' : 'pending';
 
     // Start transaction
-    mysqli_begin_transaction($conn);
+    $conn->begin_transaction();
 
     try {
         // Insert order
         $order_sql = "INSERT INTO orders (user_id, order_number, customer_name, customer_email, customer_phone, shipping_address, payment_method, payment_status, total_amount, shipping_charge, grand_total, order_status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
-        $order_stmt = mysqli_prepare($conn, $order_sql);
-        mysqli_stmt_bind_param($order_stmt, "isssssssddd", $user_id, $order_number, $name, $email, $phone, $address, $payment, $payment_status, $total_amount, $shipping_charge, $grand_total);
-        mysqli_stmt_execute($order_stmt);
-        $order_id = mysqli_insert_id($conn);
+        $order_stmt = $conn->prepare($order_sql);
+        $order_stmt->bind_param("isssssssddd", $user_id, $order_number, $name, $email, $phone, $address, $payment, $payment_status, $total_amount, $shipping_charge, $grand_total);
+        $order_stmt->execute();
+        $order_id = $conn->insert_id;
 
         // Insert order items & reduce stock
         foreach ($items as $item) {
             $item_total = $item['price'] * $item['quantity'];
             $oi_sql = "INSERT INTO order_items (order_id, product_id, product_name, product_model_number, product_image, selected_strap_size, quantity, price, total)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            $oi_stmt = mysqli_prepare($conn, $oi_sql);
-            mysqli_stmt_bind_param($oi_stmt, "iissssidd", $order_id, $item['product_id'], $item['pname'], $item['model_number'], $item['main_image'], $item['selected_strap_size'], $item['quantity'], $item['price'], $item_total);
-            mysqli_stmt_execute($oi_stmt);
+            $oi_stmt = $conn->prepare($oi_sql);
+            $oi_stmt->bind_param("iissssidd", $order_id, $item['product_id'], $item['pname'], $item['model_number'], $item['main_image'], $item['selected_strap_size'], $item['quantity'], $item['price'], $item_total);
+            $oi_stmt->execute();
 
             // Reduce stock
             $stock_sql = "UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ? AND stock_quantity >= ?";
-            $stock_stmt = mysqli_prepare($conn, $stock_sql);
-            mysqli_stmt_bind_param($stock_stmt, "iii", $item['quantity'], $item['product_id'], $item['quantity']);
-            mysqli_stmt_execute($stock_stmt);
+            $stock_stmt = $conn->prepare($stock_sql);
+            $stock_stmt->bind_param("iii", $item['quantity'], $item['product_id'], $item['quantity']);
+            $stock_stmt->execute();
 
-            if (mysqli_affected_rows($conn) === 0) {
+            if ($conn->affected_rows === 0) {
                 throw new Exception("Stock issue for product: {$item['pname']}");
             }
         }
 
         // Clear cart
-        $clear = mysqli_prepare($conn, "DELETE FROM cart WHERE user_id = ?");
-        mysqli_stmt_bind_param($clear, "i", $user_id);
-        mysqli_stmt_execute($clear);
+        $clear = $conn->prepare("DELETE FROM cart WHERE user_id = ?");
+        $clear->bind_param("i", $user_id);
+        $clear->execute();
 
         // Update user address if empty
-        $addr_check = mysqli_prepare($conn, "SELECT address FROM users WHERE id = ?");
-        mysqli_stmt_bind_param($addr_check, "i", $user_id);
-        mysqli_stmt_execute($addr_check);
-        $user_addr = mysqli_fetch_assoc(mysqli_stmt_get_result($addr_check));
+        $addr_check = $conn->prepare("SELECT address FROM users WHERE id = ?");
+        $addr_check->bind_param("i", $user_id);
+        $addr_check->execute();
+        $user_addr = $addr_check->get_result()->fetch_assoc();
         if (empty($user_addr['address'])) {
-            $upd_addr = mysqli_prepare($conn, "UPDATE users SET address = ? WHERE id = ?");
-            mysqli_stmt_bind_param($upd_addr, "si", $address, $user_id);
-            mysqli_stmt_execute($upd_addr);
+            $upd_addr = $conn->prepare("UPDATE users SET address = ? WHERE id = ?");
+            $upd_addr->bind_param("si", $address, $user_id);
+            $upd_addr->execute();
         }
 
-        mysqli_commit($conn);
+        $conn->commit();
 
         // Handle eSewa redirect (simplified — in production, redirect to eSewa gateway)
         if ($payment === 'eSewa') {
@@ -126,7 +126,7 @@ if ($action === 'place_order') {
 }
 
     } catch (Exception $e) {
-        mysqli_rollback($conn);
+        $conn->rollback();
         $_SESSION['error'] = 'Order failed: ' . $e->getMessage();
         header('Location: ../checkout.php');
         exit;

@@ -198,7 +198,7 @@ $conn->close();
                                         <td class="px-4 py-3">
                                             <div class="flex items-center gap-3">
                                                 <?php if (!empty($product['main_image'])): ?>
-                                                    <img src="../<?php echo htmlspecialchars($product['main_image']); ?>" alt="" class="w-10 h-10 rounded object-cover flex-shrink-0" style="border: 1px solid #E0E2E7;">
+                                                    <img src="../assets/uploads/products/<?php echo htmlspecialchars(basename($product['main_image'])); ?>" alt="" class="w-10 h-10 rounded object-cover flex-shrink-0" style="border: 1px solid #E0E2E7;">
                                                 <?php else: ?>
                                                     <div class="w-10 h-10 rounded flex items-center justify-center flex-shrink-0 text-xs" style="background-color: #F7F8FA; border: 1px solid #E0E2E7; color: #8A8F99;">No img</div>
                                                 <?php endif; ?>
@@ -243,7 +243,7 @@ $conn->close();
                                         <td class="px-4 py-3 text-right">
                                             <div class="flex items-center justify-end gap-2">
 
-                                                <form method="POST" action="actions/product_action.php" class="inline">
+                                                <form method="POST" action="actions/product-action.php" class="inline">
                                                     <input type="hidden" name="action" value="toggle_status">
                                                     <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
                                                     <input type="hidden" name="current_status" value="<?php echo $product['is_active']; ?>">
@@ -254,7 +254,7 @@ $conn->close();
 
                                                 <a href="edit-product.php?id=<?php echo $product['id']; ?>" class="text-xs font-medium px-2.5 py-1 rounded no-underline transition-all duration-200" style="border: 1px solid #E0E2E7; color: #1B2A4A;" onmouseover="this.style.backgroundColor='#F7F8FA';" onmouseout="this.style.backgroundColor='transparent';">Edit</a>
 
-                                                <form method="POST" action="actions/product_action.php" class="inline" onsubmit="return confirm('Are you sure you want to delete this product?');">
+                                                <form method="POST" action="actions/product-action.php" class="inline" onsubmit="return confirm('Are you sure you want to delete this product?');">
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
                                                     <button type="submit" class="text-xs font-medium px-2.5 py-1 rounded transition-all duration-200" style="border: 1px solid rgba(214,69,69,0.3); color: #D64545; background: none; cursor: pointer;" onmouseover="this.style.backgroundColor='#FDEAEA';" onmouseout="this.style.backgroundColor='transparent';">Delete</button>
